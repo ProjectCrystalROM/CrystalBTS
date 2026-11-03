@@ -1,0 +1,225 @@
+# HEAD
+
+- Ignore inactive call identities when correlating femtocell OTASP replies.
+- Improve traffic channel FER (RC1/RC2/RC3).
+- Web UI UX updates.
+- Fix issue with USB threads not getting real-time scheduling on macOS.
+- Fix issue with femtocell configuration drift.
+- Added closed access mode (defaults to open) to allow system access for subscribers only (1x and EVDO).
+- Fix issue on Femtocells where DST not applied properly. Add optional per-site `timezone` override in `config/femto.json`.
+- Fixed the cdma-ms softphone clock reading an hour fast under daylight saving time.
+- Added network-initiated OTASP provisioning from subscriber and mobile pages.
+- MEID support added to BSC/BTS.
+- Added CAVE authentication, OTASP A-key provisioning, configurable voice privacy, and authentication activity in the dashboard.
+  Migration: remove `overhead.auth_mode` from `config/bts.json` to follow the MSC authentication setting.
+- Added support for PCM16 8kHz audio to cdma-voice-gw.
+- Faster call and data setup for IS-2000 mobiles.
+- Improved 1x access probe decode performance.
+- Add support for non-CDMA voice frames and additional stability improvements.
+- Fixed incoming 13k voice calls to legacy IS-95 phones on PCS (Page Response got no traffic channel).
+- Added support for legacy IS-95 devices on PCS (default `min_p_rev` is now 1).
+- Improved HRPD connection reliability, packet recovery, and reverse power control.
+- Fix default PDSN config mismatch with A11 key.
+- Move SDR code out into [`sdr-hal`](https://github.com/chrismoos/sdr-hal).
+- Femtocell site configuration now forces ACS username, password, and SIP password to be set.
+- Added SMPP SMS support.
+- Improve RC3 traffic acquisition.
+- Airvana femtocell provisioning now uses the configured PDSN A11 key and SPI.
+- Fixed OTASP provisioning through Airvana femtocells (@dondaplayer1).
+- Added Airave 2.5+ provisioning support (@dondaplayer1).
+- Added support for femtocells (Airvana Airave FAPs): ACS/CWMP provisioning over an IPsec SeGW, SIP voice and SMS, and packet data, managed as ordinary cells. Configure in `config/femto.json`, `config/femto.local.json`, and `config/pdsn.local.json`.
+- Fixed band class channel validation and PRL scanning in cdma-ms, which now tunes by band class and channel alone.
+- Added a full CDMA2000 1x Mobile Station library and softphone.
+- Fix issue with HRPD only mode exiting early.
+- MS-to-MS calls paging streamlined for quicker time to ring.
+- Added a WAP 1.x gateway (Kannel on the tunnel address, ports 9200/9201) with HTML-to-WML transcoding. Redirect a handset's provisioned carrier WAP proxy to it with `WAP_HIJACK_ENDPOINTS`.
+- Fixed libbladeRF binding incompatibility with some versions.
+- The stack now runs as separate components, with one MSC serving multiple Base Stations, each a BSC with multiple cells, and the web managing the whole network through the MSC. The PDSN supports multiple PCFs.
+  Migration:
+  - `config/msc.json`:
+    - Remove `a1_listen_addr` and `a1_peers`.
+    - Add `base_stations`, one entry per base station giving its `management_endpoint` (the BSC's management gRPC address, e.g. `http://127.0.0.1:17016`) and an optional stable `id`.
+    - Add `packet_endpoint` (the PDSN packet gRPC address, e.g. `http://127.0.0.1:17021`).
+    - Add `hlr_endpoint` and `smsc_endpoint`.
+    - Add an `otasp.home_network` block with `sid` and `nid` matching what your cells broadcast, or handsets will think they are roaming.
+    - Remove `voice.release_timeout_ms` and `voice.service_connect_timeout_ms`, now `voice_timeouts` in `config/bsc.json`.
+  - `config/bsc.json`:
+    - Replace the `abis` and `bearer` blocks with a `bts_peers` list, one entry per cell giving `oam_endpoint`, `abis_addr`, `bearer_bind_addr` and `bearer_remote_addr`, and an optional stable `id`.
+    - Add `a1_bind_addr`, the address the BSC listens for the MSC on.
+    - Add `hlr_endpoint`, `smsc_endpoint`, and `packet_endpoint`.
+    - Add a `voice_timeouts` block with `service_connect_timeout_ms` and `release_timeout_ms`, moved from `voice` in `config/msc.json`.
+    - Remove `paging_retry`: the value from the attaching BTS's config is used.
+  - `config/bts.json`:
+    - Set `sector` and `management.bind_addr`.
+    - `paging_retry` now belongs here (was in `config/bsc.json`). Move any tuned value here.
+    - Move `iq_capture_dir` here from `config/management.json`.
+    - An EV-DO cell needs an `evdo.a9` block naming `pcf_addr`, `pcf_a8_addr` and its own `a8_bind_addr`, and each EV-DO cell sharing a host needs its own `evdo.an_grpc_bind_addr`.
+  - `config/hlr.json` and `config/smsc.json`: `grpc_listen_addr` now binds `0.0.0.0` so the web can reach them directly.
+  - `config/pdsn.json`: `a10_bearer.udp_peer_addr` may now be removed.
+  - `cdma-msc` and `cdma-nib` no longer take `--a1-addr`.
+  - The web uses `MSC_GRPC_ADDRESS` for management, plus `HLR_GRPC_ADDRESS` and `SMSC_GRPC_ADDRESS` (default: the MSC host on ports 17019 and 17020). `AN_GRPC_ADDRESS` and the BSC management address are no longer used.
+- Forward channel power now follows the C.S0010 base station test model: pilot 20%, sync 4.7%, paging 18.8%, and 56.5% shared by active traffic channels. Pilot power stays constant as calls come and go.
+  Migration: in `config/bts.json` remove `downlink.{pilot,sync,paging}.gain`, or rename them to `power_fraction` with a share of total power (0..1). Optional `downlink.traffic.power_fraction` and `downlink.traffic.max_channel_power_fraction` set the traffic allotment.
+- Improved RC1/RC2/RC3 reverse power control and reduced frame errors, including with RC3 gating.
+- Improved paging coordination with multiple paged MS.
+- Improved traffic/MSC control handling.
+- Fixed builds with GCC 15 and newer.
+- Added separate uplink and downlink VJ compression settings.
+  Config migration: `packet.enable_vj_compression_default` -> `packet.enable_uplink_vj_compression`, `packet.enable_downlink_vj_compression`.
+- Improved PRL management interface (UI filters, running system generation, pre-save diff, and more).
+- Added a Sprint BTS profile selectable with `--bts-profile sprint`.
+- Mobile IPv4 replies now provide DNS settings.
+- Added authenticated Mobile IPv4 registration for carrier profiles.
+- Improved Band Class 1 (i.e. Sprint).
+- Fixed EV-DO devices switching to UTC after acquiring the HRPD carrier.
+- Improved EV-DO reverse access decoding for weak uplink preambles.
+- Fix issue with low throughput on some EV-DO devices (~capped around 200kbps).
+- Added an Openwave UP.Link gateway so UP.Browser handsets can browse the web over packet data. Set the proxy endpoints it claims with `HDTP_HIJACK_ENDPOINTS`.
+- Added IS-95 asynchronous data calls over Rate Set 2.
+- Improve EV-DO reverse power control.
+- Reduced CPU usage across the BTS receiver, transmitter, and packet service.
+- Added support for RC2, QCELP 13K, and QCELP 8K voice. Fixes #16.
+- Fixed 1x downlink power drops while an assigned F-SCH is idle.
+- Improved EV-DO downlink stability under changing signal conditions.
+- Added additional air-interface diagnostics and logging.
+- Added real-time scheduling priorities across radio I/O threads.
+- Reduced EV-DO forward traffic TX stalls by preparing packet coding before
+  enqueue and bounding per-batch queue intake.
+- Reduced EV-DO reverse access receiver CPU usage.
+- Improved EV-DO reverse traffic recovery after brief signal loss while reducing receiver CPU usage.
+- Reduced BTS RX thread usage for active 1x and EV-DO traffic.
+- Increased and balanced 1x transmit power in adjacent 1x/EV-DO composite mode.
+- Fixed rejection of EV-DO composite adjacent carriers whose transition bands overlap.
+- EV-DO composite mode now accepts adjacent 1x and HRPD carriers when their occupied bandwidths do not overlap.
+- Added initial EV-DO (HRPD) support. Rev 0 and Rev A devices are supported.
+- Fixed `*228` failed PRL decode for Extended PRLs that responded to a
+  non-Extended PRL Dimensions request.
+- Fixed `*228` failed PRL decode for Extended PRLs that responded to a non-Extended PRL Dimensions request.
+- Fix issue with subscriber matching (when both MEID and ESN present).
+- CPU usage reduction via optimizations on RX pipeline. 
+- Fixed OTASP causing AMPS/CDMA dual-mode phones to stop working on AMPS, with an optional per-subscriber analog control channel override on the subscriber page (it had overwritten the phone's analog control channel with the CDMA paging channel).
+- Fixed page handling for lower P_REV 3 handsets.
+- Speed test downloads can now run up to 2 MiB.
+- BTS TX pacing no longer busy-waits between batches. It sleeps to the
+  batch deadline with an adaptive wake margin, cutting TX thread CPU
+  roughly 3x at idle.
+- Fixed RC1 voice forward and reverse FER by correcting PCB puncturing and
+  low-rate reverse frame timing.
+- BTS TX slow-generation warnings now use full-batch timing instead of
+  per-block timing.
+- Voice originations with SO32768 are now accepted and renegotiated to
+  EVRC (SO 3) on the traffic channel instead of being rejected at the
+  paging channel.
+- Require unique ESN/MEID per subscriber.
+- Allow access from all origins in Next dev mode.
+- Improved PRL decode error messages on failed `*228` read-backs.
+- Failed PRL read-backs can be downloaded as `.prl` from the session detail page.
+- Added OTASP (`*228`) over-the-air provisioning. Dial `*228` to
+  program the handset's CDMA/Analog NAM (IMSI, MDN, home system
+  banner), MMS URI, and Preferred Roaming List (classic and
+  extended). PRL can be managed in the web interface. Writes are
+  off by default — set
+  `otasp.writes.{cdma_analog_nam,mdn,cdma_nam,home_system_tag,mms_uri,prl}`
+  in `config/msc.json` to enable.
+- Fixed a LimeSDR crash on BTS shutdown. Fixes #19.
+- Added initial support for Mobile IP via `packet.mobile_ip.enabled` for
+  devices that use it instead of Simple IP.
+- MT SMS to an unprovisioned phone number or with a payload that won't
+  fit on A1 ADDS Page is marked Failed instead of looping in the retry
+  sweep forever.
+- Concurrent SMS to the same subscriber are queued instead of rejected,
+  so MSC retry sweeps no longer drop submissions when an earlier SMS is
+  still being delivered.
+- Optional MMS support via an Mbuni MMSC. Enable with
+  `docker compose --profile mms up` and configure handsets with MMSC URL
+  `http://mmsc.local.1xbts.org/`. Migration: set `mgmt_grpc_addr` in
+  `config/msc.json` to `0.0.0.0:17017`.
+- Captive DNS redirects well-known carrier MMSC hostnames to the local
+  MMSC, so handsets with a baked-in carrier MMSC reach the cell MMSC
+  without reprovisioning. Override with `MMSC_HIJACK_HOSTS`. HTTP only.
+- MMS messages are attributed to the real subscriber phone number
+  rather than a NAT'd IP. Migration: set `grpc_listen_addr` in
+  `config/management.json` to `0.0.0.0:17016`.
+- Oversized SMS escalates from the paging channel to an SO6 traffic
+  channel and delivers on F-DSCH instead of failing.
+- MS-to-MS SMS now delivers to the destination subscriber.
+- MT SMS for an offline subscriber is queued and delivered when the
+  subscriber next registers.
+- MT SMS delivered on an active traffic channel is now acknowledged
+  back to the MSC, so submissions no longer get stuck in retry.
+- MSC recovers SMS submissions left mid-page across a restart.
+- Message log decodes WAP Push bursts and no longer renders binary
+  bearer-data bytes as if they were SMS text.
+- SMSC list shows MMS rows with inline decode (Transaction-ID,
+  Content-Location, Size, Expiry, From). Click a row to expand.
+- `/mobiles/[id]` and `/subscribers/[id]` show a Recent Messages card.
+- `MscManagementService.SendSms` accepts an optional teleservice ID
+  and binary user data, for WAP Push and other non-text teleservices.
+- PPP packet data sessions now support peer-requested Van Jacobson TCP/IP header
+  compression. PDSN-originated VJ requests are opt-in with
+  `pdsn.packet.enable_vj_compression_default` (default `false`).
+- Traffic-channel SMS and packet-data originations now keep A1 call context, so
+  MO SMS can resolve the originating subscriber on the MSC.
+- DTMF pressed during a call is now delivered to the SIP peer.
+  Migration: `dtmf_mode` in `config/voice-gw.json` now defaults to
+  `"rfc2833"`. Set it to `"disabled"` to disable DTMF forwarding.
+- Registrations now require a complete mobile identity (IMSI+ESN or
+  IMSI+MEID) for HLR resolution and welcome-SMS gating. Subscriber
+  create/update in the web UI requires the same.
+- P_REV 11 ESPM support (EXT_PREF_MSID_TYPE, MEID_REQD) and the SPM
+  P_REV 6/7/8 tail fields are implemented but not enabled in the
+  shipped `config/bts.json`. To enable, set the overhead and ESPM
+  `p_rev` to 11 and fill in `ext_pref_msid_type` and `meid_reqd`.
+  Not fully supported yet: some mobiles do not register cleanly at
+  P_REV 11, leave it at 6 for production.
+- Reverse access-channel SMS Data Burst messages are now handled by the BSC.
+- Access-channel probe defaults use higher initial and nominal power for SDRs
+  with lower RX sensitivity.
+- Legacy IS-95 voice calls complete setup by sending a single Service Option
+  Response and labeling it correctly in traffic events.
+- Inbound SIP: the voice gateway accepts trunk `INVITE`s and routes them
+  to subscribers by matching the Request-URI user against
+  `subscriber.phone_number`. Unknown → 404, not registered → 480, busy →
+  486, caller cancels → 487, MSC timeout → 408
+  (`sip.inbound_decision_timeout_ms`, default `30000`).
+- MSC plays ringback toward the SIP caller (subscriber's HLR ringtone or
+  NANP fallback) with early-media SDP in `183 Session Progress`.
+  `voice.inbound_sip_msc_ringback` (default `true`) controls it.
+- Hang-up clears immediately in both directions: mobile on-hook sends
+  `BYE` on the trunk; trunk `BYE` releases the mobile leg without
+  waiting for BSC inactivity.
+- MS-MS calls now display the calling party number on the callee.
+- MT page hunt: MSC keeps re-paging on BSC page-response timeout
+  (and when the target IMSI isn't in BSC's volatile registry) until the
+  MS answers or the hunt window expires. SIP callers get 480 on
+  giveup. `voice.page_retry_cooldown_ms` (default `1000`),
+  `voice.page_retry_max_duration_ms` (default `60000`, must be `> 0`).
+- New `voice.generate_ringback` (default `true`): MSC plays bearer-side
+  ringback audio toward the caller MS.
+- New `voice.send_tones_alert` (default `false`): MSC sends the air-side
+  Ringback Signal IE so the MS plays its own ringback. Independent of
+  `generate_ringback` — either, both, or neither are valid.
+- `voice.sip_ringback_disable` (default `false`): when `true`, disables
+  MSC-generated ringback early media for SIP-routed calls so the SIP side
+  can provide ringback.
+- SIP voice-gateway failures play a busy tone on the F-TCH before
+  clearing. `voice.failure_tone_duration_ms` (default `3000`,
+  `0` disables).
+
+- Select your CDMA carrier with a single `channel` block (band class,
+  subclass, channel number) — TX/RX frequencies and overhead fields
+  are derived automatically. All 23 C.S0057-F band classes supported.
+
+  Migration:
+  - Add to `config/bts.json`:
+    ```json
+    "channel": { "band_class": "bc0", "band_subclass": 0, "cdma_channel": 384 }
+    ```
+  - In `config/bts.json`, remove `runtime.tx_center_frequency_hz`.
+  - In each `config/radio_*.json`, remove `rx_freq_hz` (or rename to
+    `rx_freq_hz_override` if you actually need a non-derived RX tune).
+  - In `config/bsc.json`, drop `overhead.cdma_freq` and `ext_cdma_freq`
+    if they were `0` (or set them to `null`).
+  - In `config/bsc.json`, you can also drop
+    `paging.message_defaults.cdma_channel_list.channels` — when empty,
+    the operating channel is broadcast automatically.

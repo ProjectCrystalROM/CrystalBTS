@@ -1,5 +1,4 @@
 # HEAD
-
 - Route SSD update messages through the femtocell bridge for A-key provisioning.
 
 - Make links easier to tap in the Android WAP browser.
@@ -12,6 +11,18 @@
 - Add an opt-in carrier portal with ZIP-code weather and persistent cookie-based settings for legacy browsers.
 
 - Ignore inactive call identities when correlating femtocell OTASP replies.
+- BTS now syncs hardware time on its own thread, reducing hardware time fetch jitter.
+- Airave 2.5 (5.x firmware) femtocells now receive a changed `term_auth_psk` on the next sync (EV-DO terminal authentication failed after the secret was regenerated).
+- A1 now runs as A1p (BSAP over SUA over SCTP 14001).
+- Abis traffic, A2p, A8/A10, A9, A11 and A21 now use their standard formats and ports, so third-party PCFs and PDSNs interoperate. `docs/PORTS.md` lists the ports.
+  Migration (only for local config overrides): set `pcf.json` `a9_bind_addr` to `127.0.0.1:5603` and `bts.json` `evdo.a9.pcf_addr` to match. Remove `a11.framing`. Replace `an_a21_addr` in `config/bsc.json` with an `a21` block.
+- 1x packet data, including F-SCH and SO 12, now runs through the PCF over A9 and A8 like EV-DO.
+- macOS real-time constraint improvements.
+- Reduced CSIM flash wear and improved authentication performance and reliability.
+- Authentication COUNT updates now default to once per 24 hours on the next traffic connection.
+- Added a CSIM applet for sysmoISIM-SJA5 cards and a `csim` tool to personalize and inspect CSIM cards. See `sim/README.md`.
+- Web UI updates to EV-DO, packet data, and cell view.
+- Added support for Mobile IP handsets that compute the MN-HA authenticator per RFC 3344.
 - Improve traffic channel FER (RC1/RC2/RC3).
 - Web UI UX updates.
 - Fix issue with USB threads not getting real-time scheduling on macOS.

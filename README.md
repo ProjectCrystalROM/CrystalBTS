@@ -1,15 +1,19 @@
-# 1xBTS
+# CrystalBTS
 
-[![Website](https://img.shields.io/badge/website-1xbts.org-7A5AF8.svg)](https://1xbts.org)
-[![Docs](https://img.shields.io/badge/docs-1xbts.org%2Fdocs-7A5AF8.svg)](https://1xbts.org/docs)
-[![CI](https://github.com/chrismoos/1xbts/actions/workflows/ci.yml/badge.svg)](https://github.com/chrismoos/1xbts/actions/workflows/ci.yml)
+[![CI](https://github.com/ProjectCrystalROM/CrystalBTS/actions/workflows/ci.yml/badge.svg)](https://github.com/ProjectCrystalROM/CrystalBTS/actions/workflows/ci.yml)
+[![Upstream](https://img.shields.io/badge/upstream-1xBTS-7A5AF8.svg)](https://github.com/chrismoos/1xbts)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](Cargo.toml)
 
-1xBTS is an experimental CDMA2000 1x and HRPD (1xEV-DO) radio-access and
+CrystalBTS is an experimental CDMA2000 1x and HRPD (1xEV-DO) radio-access and
 core-network stack implemented primarily in Rust. It includes BTS, BSC, HRPD
 AN, MSC, HLR, SMSC, packet data, voice, SDR radio backends, and a web dashboard
 for development and operation.
+
+CrystalBTS is a hard fork of [1xBTS](https://github.com/chrismoos/1xbts),
+originally created by Chris Moos. It preserves the upstream project's
+attribution and Apache-2.0 licensing while pursuing its own compatibility and
+revival work.
 
 > **New: EV-DO is here.** Initial HRPD support provides end-to-end packet data
 > for EV-DO Rev 0 and Rev A devices, including the air interface, AN
@@ -21,18 +25,19 @@ This project is intended for research, interoperability testing, and lab use.
 Operate RF hardware only where you are authorized to transmit. You have been warned.
 
 <a href="docs/images/screenshot.png">
-  <img src="docs/images/screenshot.png" alt="1xBTS dashboard" width="720">
+  <img src="docs/images/screenshot.png" alt="CrystalBTS dashboard" width="720">
 </a>
 
-## Why 1xBTS
+## Why CrystalBTS
 
 While CDMA2000 was a major technology in the US and some other places around the world, 
 it was never as ubiquitious as other standards like GSM. Up until now there has never been
-a way to revive old CDMA2000 devices. I started this project to change that.
+a way to revive old CDMA2000 devices. CrystalBTS continues that work with an
+independent direction for legacy-device compatibility and experimentation.
 
 ## Status
 
-1xBTS is under active development. The current stack can run as a
+CrystalBTS is under active development. The current stack can run as a
 network-in-a-box process for local integration, or as separate network-node
 processes. The 1x BTS and BSC can also run split over the included Abis
 transport. Support varies by handset, radio backend, channel configuration, and
@@ -53,7 +58,9 @@ integration wrappers under `external/`:
 - `1xbts-web` - Next.js dashboard backed by the management gRPC APIs.
 - `proto` - protobuf service definitions.
 
-Full documentation lives at [1xbts.org/docs](https://1xbts.org/docs).
+Project documentation lives in this repository's [`docs/`](docs/) directory.
+The [upstream 1xBTS documentation](https://1xbts.org/docs) remains useful for
+features CrystalBTS has not yet documented separately.
 
 ### Network Nodes
 
@@ -138,8 +145,8 @@ Other SoapySDR-compatible devices may work but are not regularly exercised.
 Clone, bring up the support services, and run the network-in-a-box:
 
 ```sh
-git clone https://github.com/chrismoos/1xbts.git
-cd 1xbts
+git clone git@github.com:ProjectCrystalROM/CrystalBTS.git
+cd CrystalBTS
 
 # Linux:
 sudo modprobe fou ipip   # load kernel modules required by fou-nat
@@ -272,13 +279,13 @@ pnpm dev
 
 ## Support
 
-- **GitHub Discussions** — [github.com/chrismoos/1xbts/discussions](https://github.com/chrismoos/1xbts/discussions) for questions, ideas, and show-and-tell.
-- **GitHub Issues** — [github.com/chrismoos/1xbts/issues](https://github.com/chrismoos/1xbts/issues) for bug reports and feature requests.
-- **IRC** — `#1xbts` on [Libera.Chat](https://libera.chat) for live chat.
+- **GitHub Discussions** — [ProjectCrystalROM/CrystalBTS discussions](https://github.com/ProjectCrystalROM/CrystalBTS/discussions) for questions, ideas, and show-and-tell.
+- **GitHub Issues** — [ProjectCrystalROM/CrystalBTS issues](https://github.com/ProjectCrystalROM/CrystalBTS/issues) for bug reports and feature requests.
+- **Upstream community** — `#1xbts` on [Libera.Chat](https://libera.chat) remains an upstream community channel.
 
 ## License
 
-The main 1xBTS workspace is licensed under Apache-2.0. The SDR wrapper crates
+CrystalBTS is a derivative of 1xBTS and is licensed under Apache-2.0. The SDR wrapper crates
 under `external/` (`bladerf`, `bladerf-sys`, `limesuite`, `limesuite-sys`, `uhd`,
 `uhd-sys`) are dual-licensed `MIT OR Apache-2.0`; see the individual `Cargo.toml`
 files for package-level license metadata.

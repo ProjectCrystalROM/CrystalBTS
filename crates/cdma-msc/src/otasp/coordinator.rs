@@ -1059,6 +1059,12 @@ impl OtaspCoordinator {
                     .session
                     .awaited_key_exchange_response()
                     .map(str::to_string)
+                    .or_else(|| {
+                        entry
+                            .session
+                            .awaiting_ssd_update()
+                            .then(|| "SSD Update Response".to_string())
+                    })
                     .unwrap_or_else(|| entry.last_phase.clone());
                 warn!(
                     "OTASP: session call_id={} timed out after {:?} waiting on '{}' — releasing",

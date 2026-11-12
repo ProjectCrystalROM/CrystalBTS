@@ -40,6 +40,12 @@ pub const MSG_TYPE_ADDS_PAGE: u8 = 0x65;
 pub const MSG_TYPE_ADDS_PAGE_ACK: u8 = 0x66;
 pub const MSG_TYPE_ADDS_TRANSFER: u8 = 0x67;
 pub const MSG_TYPE_ADDS_TRANSFER_ACK: u8 = 0x68;
+/// Mobility-management DTAP messages for traffic-channel SSD update.
+pub const MSG_TYPE_SSD_UPDATE_REQUEST: u8 = 0x47;
+pub const MSG_TYPE_BASE_STATION_CHALLENGE: u8 = 0x48;
+pub const MSG_TYPE_BASE_STATION_CHALLENGE_RESPONSE: u8 = 0x49;
+pub const MSG_TYPE_SSD_UPDATE_RESPONSE: u8 = 0x4a;
+pub const IE_CAUSE_LAYER_3: u8 = 0x08;
 /// A.S0014-D §3.3.12 and §3.3.13.
 pub const MSG_TYPE_PRIVACY_MODE_COMMAND: u8 = 0x53;
 pub const MSG_TYPE_PRIVACY_MODE_COMPLETE: u8 = 0x55;
@@ -142,6 +148,10 @@ pub fn message_type_name(
         (MSG_TYPE_ADDS_PAGE_ACK, _) => "ADDS Page Ack",
         (MSG_TYPE_ADDS_TRANSFER, _) => "ADDS Transfer",
         (MSG_TYPE_ADDS_TRANSFER_ACK, _) => "ADDS Transfer Ack",
+        (MSG_TYPE_SSD_UPDATE_REQUEST, false) => "SSD Update Request",
+        (MSG_TYPE_BASE_STATION_CHALLENGE, false) => "Base Station Challenge",
+        (MSG_TYPE_BASE_STATION_CHALLENGE_RESPONSE, false) => "Base Station Challenge Response",
+        (MSG_TYPE_SSD_UPDATE_RESPONSE, false) => "SSD Update Response",
         (0x53, false) => "ADDS Deliver",
         (0x54, false) => "ADDS Deliver Ack",
         _ => return None,

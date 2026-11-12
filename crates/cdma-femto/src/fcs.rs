@@ -1,7 +1,10 @@
 use cdma_ios::femto_interface_msg::{
-    FemtoInterfaceMsg, MSG_TYPE_ADDS_DELIVER, MSG_TYPE_ADDS_DELIVER_ACK, MSG_TYPE_ADDS_PAGE_ACK,
-    MSG_TYPE_ADDS_TRANSFER, MSG_TYPE_CM_SERVICE_REQUEST, MSG_TYPE_LOCATION_UPDATING_REQUEST,
-    MSG_TYPE_PAGING_RESPONSE, MimePart, Multipart,
+    Discriminator, FemtoIe, FemtoInterfaceMsg, IE_AUTHENTICATION_CHALLENGE_PARAMETER,
+    IE_AUTHENTICATION_RESPONSE_PARAMETER, MSG_TYPE_ADDS_DELIVER, MSG_TYPE_ADDS_DELIVER_ACK,
+    MSG_TYPE_ADDS_PAGE_ACK, MSG_TYPE_ADDS_TRANSFER, MSG_TYPE_BASE_STATION_CHALLENGE,
+    MSG_TYPE_BASE_STATION_CHALLENGE_RESPONSE, MSG_TYPE_CM_SERVICE_REQUEST,
+    MSG_TYPE_LOCATION_UPDATING_REQUEST, MSG_TYPE_PAGING_RESPONSE, MSG_TYPE_SSD_UPDATE_REQUEST,
+    MSG_TYPE_SSD_UPDATE_RESPONSE, MimePart, Multipart,
 };
 use cdma_ios::transport::A1TransportEvent;
 use cdma_ios::{
@@ -230,6 +233,24 @@ impl FemtoConvergenceServer {
         cell_identifier: CellId,
         call_id: Option<u64>,
     ) -> Result<EncodedA1Message, FcsError> {
+        if message.discriminator != Some(Discriminator::Bsmap) {
+            let decoded = match message.message_type {
+                MSG_TYPE_BASE_STATION_CHALLENGE => {
+                    let wire = femto_mm_wire(message, Some(IE_AUTHENTICATION_CHALLENGE_PARAMETER))?;
+                    let body = cdma_ios::BaseStationChallengeMessage::decode(&wire)?.encode()?;
+                    Some(Message::new(MessageType::BaseStationChallenge, body))
+                }
+                MSG_TYPE_SSD_UPDATE_RESPONSE => {
+                    let wire = femto_mm_wire(message, None)?;
+                    let body = cdma_ios::SsdUpdateResponseMessage::decode(&wire)?.encode()?;
+                    Some(Message::new(MessageType::SsdUpdateResponse, body))
+                }
+                _ => None,
+            };
+            if let Some(decoded) = decoded {
+                return Ok(EncodedA1Message::from_message_for_call(&decoded, call_id));
+            }
+        }
         let layer3_information = match message.message_type {
             cdma_ios::femto_interface_msg::MSG_TYPE_PRIVACY_MODE_COMPLETE
                 if message.discriminator
@@ -317,6 +338,26 @@ impl FemtoConvergenceServer {
     pub fn from_msc_a1(&self, encoded: &EncodedA1Message) -> Result<FemtoInterfaceMsg, FcsError> {
         let message = encoded.decode()?;
         match message.message_type {
+            MessageType::SsdUpdateRequest => {
+                let request = cdma_ios::SsdUpdateRequestMessage::decode(&message.payload)?;
+                let ie = FemtoIe::tlv(
+                    IE_AUTHENTICATION_CHALLENGE_PARAMETER,
+                    &request.authentication_challenge_parameter_randssd.encode(),
+                )?;
+                Ok(femto_mm_message(MSG_TYPE_SSD_UPDATE_REQUEST, vec![ie]))
+            }
+            MessageType::BaseStationChallengeResponse => {
+                let response =
+                    cdma_ios::BaseStationChallengeResponseMessage::decode(&message.payload)?;
+                let ie = FemtoIe::tlv(
+                    IE_AUTHENTICATION_RESPONSE_PARAMETER,
+                    &response.authentication_response_parameter_authbs.encode(),
+                )?;
+                Ok(femto_mm_message(
+                    MSG_TYPE_BASE_STATION_CHALLENGE_RESPONSE,
+                    vec![ie],
+                ))
+            }
             MessageType::PrivacyModeCommand => {
                 let command = cdma_ios::PrivacyModeCommandMessage::decode(&message.payload)?;
                 Ok(FemtoInterfaceMsg::from_privacy_mode_command(&command)?)
@@ -422,6 +463,37 @@ impl FemtoConvergenceServer {
         }
         Ok(())
     }
+}
+
+fn femto_mm_message(message_type: u8, ies: Vec<FemtoIe>) -> FemtoInterfaceMsg {
+    let mut message = FemtoInterfaceMsg::new(message_type, ies);
+    message.discriminator = Some(Discriminator::Dtap);
+    message
+}
+
+// Fx2 names a mandatory positional LV with an IEI; A1 DTAP carries only LV.
+fn femto_mm_wire(message: &FemtoInterfaceMsg, positional: Option<u8>) -> Result<Vec<u8>, FcsError> {
+    let mut body = Vec::new();
+    for (index, ie) in message.ies.iter().enumerate() {
+        if index == 0 && positional == Some(ie.iei) {
+            if ie.content.first() != Some(&ie.iei) {
+                return Err(FcsError::UnsupportedA1Message(message.message_type));
+            }
+            body.extend_from_slice(&ie.content[1..]);
+        } else {
+            body.extend_from_slice(&ie.content);
+        }
+    }
+    if positional.is_some() && message.ies.first().map(|ie| ie.iei) != positional {
+        return Err(FcsError::UnsupportedA1Message(message.message_type));
+    }
+    let len = u8::try_from(body.len() + 3).map_err(|_| cdma_ios::Error::InvalidLength {
+        expected: 255,
+        actual: body.len() + 3,
+    })?;
+    let mut wire = vec![1, 0, len, 5, 0, message.message_type];
+    wire.extend_from_slice(&body);
+    Ok(wire)
 }
 
 fn imsi_string(identity: &cdma_ios::MobileIdentity) -> Option<String> {
@@ -649,6 +721,124 @@ mod tests {
         };
         let message = Message::new(MessageType::PagingRequest, request.encode().unwrap());
         EncodedA1Message::from_message_for_call(&message, None)
+    }
+
+    #[test]
+    fn translates_ssd_update_messages_in_both_directions() {
+        use cdma_ios::{
+            AuthenticationChallengeParameter, AuthenticationResponseParameter,
+            BaseStationChallengeMessage, BaseStationChallengeResponseMessage, RandomNumberType,
+            SsdUpdateChallengeParameter, SsdUpdateRequestMessage, SsdUpdateResponseMessage,
+        };
+        let fcs = FemtoConvergenceServer::new();
+        let request = SsdUpdateRequestMessage {
+            authentication_challenge_parameter_randssd: SsdUpdateChallengeParameter([
+                4, 1, 2, 3, 4, 5, 6, 7,
+            ]),
+        };
+        let wrapped = EncodedA1Message::from_message_for_call(
+            &Message::new(MessageType::SsdUpdateRequest, request.encode().unwrap()),
+            Some(7),
+        );
+        let outgoing =
+            FemtoInterfaceMsg::parse(&fcs.downlink_from_msc(&wrapped, "unused").unwrap().body)
+                .unwrap();
+        assert_eq!(outgoing.message_type, MSG_TYPE_SSD_UPDATE_REQUEST);
+        assert_eq!(outgoing.discriminator, Some(Discriminator::Dtap));
+        assert_eq!(
+            outgoing.ies,
+            vec![
+                FemtoIe::tlv(
+                    IE_AUTHENTICATION_CHALLENGE_PARAMETER,
+                    &request.authentication_challenge_parameter_randssd.encode()
+                )
+                .unwrap()
+            ]
+        );
+
+        let response = BaseStationChallengeResponseMessage {
+            authentication_response_parameter_authbs: AuthenticationResponseParameter([4, 1, 2, 3]),
+        };
+        let wrapped = EncodedA1Message::from_message_for_call(
+            &Message::new(
+                MessageType::BaseStationChallengeResponse,
+                response.encode().unwrap(),
+            ),
+            Some(7),
+        );
+        let outgoing = fcs.from_msc_a1(&wrapped).unwrap();
+        assert_eq!(
+            outgoing.message_type,
+            MSG_TYPE_BASE_STATION_CHALLENGE_RESPONSE
+        );
+        assert_eq!(
+            outgoing.ies,
+            vec![
+                FemtoIe::tlv(
+                    IE_AUTHENTICATION_RESPONSE_PARAMETER,
+                    &response.authentication_response_parameter_authbs.encode()
+                )
+                .unwrap()
+            ]
+        );
+
+        let challenge = BaseStationChallengeMessage {
+            authentication_challenge_parameter_randbs: AuthenticationChallengeParameter::new(
+                RandomNumberType::Randbs,
+                0x12345678,
+            ),
+        };
+        let incoming = femto_mm_message(
+            MSG_TYPE_BASE_STATION_CHALLENGE,
+            vec![
+                FemtoIe::tlv(
+                    IE_AUTHENTICATION_CHALLENGE_PARAMETER,
+                    &challenge.authentication_challenge_parameter_randbs.encode(),
+                )
+                .unwrap(),
+            ],
+        );
+        let mapped = fcs
+            .to_msc_a1(&incoming, CellId { cell: 1, sector: 0 }, Some(7))
+            .unwrap();
+        assert_eq!(mapped.call_id(), Some(7));
+        assert_eq!(mapped.message_type(), MessageType::BaseStationChallenge);
+        assert_eq!(
+            BaseStationChallengeMessage::decode(&mapped.decode().unwrap().payload).unwrap(),
+            challenge
+        );
+
+        for cause in [
+            None,
+            Some(cdma_ios::CauseLayer3 {
+                coding_standard: 0,
+                location: 4,
+                cause_value: 0x3b,
+            }),
+        ] {
+            let ies = cause
+                .map(|c| {
+                    vec![
+                        FemtoIe::tlv(
+                            cdma_ios::femto_interface_msg::IE_CAUSE_LAYER_3,
+                            &c.encode().unwrap(),
+                        )
+                        .unwrap(),
+                    ]
+                })
+                .unwrap_or_default();
+            let incoming = femto_mm_message(MSG_TYPE_SSD_UPDATE_RESPONSE, ies);
+            let mapped = fcs
+                .to_msc_a1(&incoming, CellId { cell: 1, sector: 0 }, Some(7))
+                .unwrap();
+            assert_eq!(mapped.message_type(), MessageType::SsdUpdateResponse);
+            assert_eq!(
+                SsdUpdateResponseMessage::decode(&mapped.decode().unwrap().payload)
+                    .unwrap()
+                    .cause_layer_3,
+                cause
+            );
+        }
     }
 
     #[test]

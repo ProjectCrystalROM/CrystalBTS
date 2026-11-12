@@ -1902,6 +1902,10 @@ impl OtaspSession {
         }
     }
 
+    pub fn awaiting_ssd_update(&self) -> bool {
+        self.phase == Phase::AwaitingSsdUpdate
+    }
+
     fn emit_a_key<T: OtaspTransport>(
         &self,
         t: &mut T,

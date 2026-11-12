@@ -1852,6 +1852,13 @@ impl ImsCore {
             {
                 self.adds_call_id(request, message, peer)
             }
+            cdma_ios::femto_interface_msg::MSG_TYPE_BASE_STATION_CHALLENGE
+            | cdma_ios::femto_interface_msg::MSG_TYPE_SSD_UPDATE_RESPONSE
+                if message.discriminator
+                    != Some(cdma_ios::femto_interface_msg::Discriminator::Bsmap) =>
+            {
+                self.adds_call_id(request, message, peer)
+            }
             cdma_ios::femto_interface_msg::MSG_TYPE_LOCATION_UPDATING_REQUEST => {
                 let location_update = message.to_location_updating_request()?;
                 let identity = match &location_update.mobile_identity_imsi {
@@ -3959,6 +3966,58 @@ mod tests {
         assert_eq!(
             cdma_ios::AddsDeliverAckMessage::decode(&returned.decode().unwrap().payload).unwrap(),
             ack
+        );
+    }
+
+    #[tokio::test]
+    async fn ssd_challenge_and_response_are_correlated_to_active_call() {
+        use cdma_ios::femto_interface_msg::{
+            FemtoIe, IE_AUTHENTICATION_CHALLENGE_PARAMETER, MSG_TYPE_BASE_STATION_CHALLENGE,
+            MSG_TYPE_SSD_UPDATE_RESPONSE,
+        };
+        let (core, mut rx) = otasp_test_core();
+        let challenge = cdma_ios::AuthenticationChallengeParameter::new(
+            cdma_ios::RandomNumberType::Randbs,
+            0x12345678,
+        );
+        let mut message = FemtoInterfaceMsg::new(
+            MSG_TYPE_BASE_STATION_CHALLENGE,
+            vec![FemtoIe::tlv(IE_AUTHENTICATION_CHALLENGE_PARAMETER, &challenge.encode()).unwrap()],
+        );
+        message.discriminator = Some(Discriminator::Dtap);
+        let peer = "198.51.100.1:5060".parse().unwrap();
+        assert_eq!(
+            core.handle_message(&otasp_message(&message), peer).status,
+            SC_OK
+        );
+        let a1 = rx.try_recv().unwrap();
+        assert_eq!(
+            (a1.call_id(), a1.message_type()),
+            (Some(41), MessageType::BaseStationChallenge)
+        );
+        assert_eq!(
+            cdma_ios::BaseStationChallengeMessage::decode(&a1.decode().unwrap().payload)
+                .unwrap()
+                .authentication_challenge_parameter_randbs,
+            challenge
+        );
+        message.message_type = MSG_TYPE_SSD_UPDATE_RESPONSE;
+        message.ies.clear();
+        message.discriminator = None;
+        assert_eq!(
+            core.handle_message(&otasp_message(&message), peer).status,
+            SC_OK
+        );
+        let a1 = rx.try_recv().unwrap();
+        assert_eq!(
+            (a1.call_id(), a1.message_type()),
+            (Some(41), MessageType::SsdUpdateResponse)
+        );
+        assert!(
+            cdma_ios::SsdUpdateResponseMessage::decode(&a1.decode().unwrap().payload)
+                .unwrap()
+                .cause_layer_3
+                .is_none()
         );
     }
 

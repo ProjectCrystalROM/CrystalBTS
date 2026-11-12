@@ -51,11 +51,11 @@
     "feature_codes": ["*228"],
     "spc_policy": "leave_default",
     "system_tag": {
-      "name": "1xBTS",
+      "name": "Kozume Wireless",
       "tag_p_rev": 1
     },
     "home_network": {
-      "sid": 22,
+      "sid": 56,
       "nid": 65535
     },
     "nam_defaults": {
@@ -64,13 +64,13 @@
       "mob_term_for_nid": true
     },
     "writes": {
-      "cdma_analog_nam": false,
-      "mdn": false,
-      "cdma_nam": false,
-      "home_system_tag": false,
-      "mms_uri": false,
-      "prl": false,
-      "a_key": false
+      "cdma_analog_nam": true,
+      "mdn": true,
+      "cdma_nam": true,
+      "home_system_tag": true,
+      "mms_uri": true,
+      "prl": true,
+      "a_key": true
     }
   }
 }

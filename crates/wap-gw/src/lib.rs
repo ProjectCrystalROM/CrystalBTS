@@ -8,6 +8,9 @@
 //! The fetch and the HTML→deck pass are shared with the HDTP gateway and live
 //! in [`gw_transcode`]. Only [`wml`] is specific to WAP.
 
+pub mod portal;
+pub mod portal_store;
+pub mod weather;
 pub mod wml;
 
 /// Content a WAP handset renders on its own. A WAP site already serves WML, and

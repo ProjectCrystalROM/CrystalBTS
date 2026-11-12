@@ -10,8 +10,8 @@
 
 use std::collections::HashMap;
 
-use scraper::Html;
 use scraper::node::Node;
+use scraper::{Html, Selector};
 use url::Url;
 
 use crate::doc::{Block, Deck, Field, Form, FormMethod, Inline, is_renderable, sanitize};
@@ -47,8 +47,35 @@ pub fn html_to_deck(html: &str, base_url: &str, limits: &Limits) -> Deck {
         deck: Deck::new(),
         line: Vec::new(),
         limits: *limits,
+        fandom_article: false,
     };
-    walk(doc.tree.root(), &mut ctx);
+    let fandom = ctx
+        .base
+        .as_ref()
+        .and_then(Url::host_str)
+        .is_some_and(|host| host == "fandom.com" || host.ends_with(".fandom.com"));
+    let article = fandom
+        .then(|| {
+            let selector = Selector::parse("#mw-content-text .mw-parser-output").unwrap();
+            doc.select(&selector).find(|element| {
+                let paragraphs = Selector::parse("p").unwrap();
+                element
+                    .select(&paragraphs)
+                    .any(|p| !p.text().collect::<String>().trim().is_empty())
+            })
+        })
+        .flatten();
+    if let Some(article) = article {
+        let title = Selector::parse("title").unwrap();
+        ctx.deck.title = doc
+            .select(&title)
+            .next()
+            .map(|t| collapse_ws(&t.text().collect::<String>()));
+        ctx.fandom_article = true;
+        walk(*article, &mut ctx);
+    } else {
+        walk(doc.tree.root(), &mut ctx);
+    }
     ctx.flush_line();
     if ctx.deck.title.is_none() {
         ctx.deck.title = Some("Page".to_string());
@@ -77,6 +104,7 @@ struct Walker {
     deck: Deck,
     line: Vec<Inline>,
     limits: Limits,
+    fandom_article: bool,
 }
 
 impl Walker {
@@ -171,6 +199,19 @@ fn walk(node: ego_tree::NodeRef<'_, Node>, ctx: &mut Walker) {
             Node::Text(t) => ctx.push_text(t),
             Node::Element(el) => {
                 let name = el.name();
+                if ctx.fandom_article
+                    && (name == "aside"
+                        || el.attr("class").is_some_and(|classes| {
+                            classes.split_ascii_whitespace().any(|class| {
+                                matches!(
+                                    class,
+                                    "portable-infobox" | "toc" | "navbox" | "mw-references-wrap"
+                                )
+                            })
+                        }))
+                {
+                    continue;
+                }
                 match name {
                     "script" | "style" | "noscript" | "svg" | "template" => {}
                     // Control and label text belongs to the form block, not
@@ -467,6 +508,30 @@ mod tests {
 
     fn deck_of(html: &str, base: &str) -> Deck {
         html_to_deck(html, base, &Limits::default())
+    }
+
+    #[test]
+    fn fandom_prioritizes_article_and_keeps_article_links() {
+        let html = r#"<html><head><title>Kittydog</title></head><body>
+          <nav><p>Global navigation</p></nav><div id="mw-content-text">
+          <div class="mw-parser-output"><aside><p>Infobox clutter</p></aside>
+          <p>Article introduction <a href="/wiki/More">More</a></p>
+          <h2>History</h2><p>Actual history.</p></div></div></body></html>"#;
+        let deck = deck_of(html, "https://youtube.fandom.com/wiki/Kittydog");
+        let output = format!("{deck:?}");
+        assert!(output.contains("Article introduction") && output.contains("Actual history"));
+        assert!(output.contains("https://youtube.fandom.com/wiki/More"));
+        assert!(!output.contains("Global navigation") && !output.contains("Infobox clutter"));
+        assert_eq!(deck.title.as_deref(), Some("Kittydog"));
+    }
+
+    #[test]
+    fn fandom_without_article_falls_back_to_regular_page() {
+        let html = "<html><body><p>Page has no article container.</p></body></html>";
+        let deck = deck_of(html, "https://youtube.fandom.com/wiki/Other");
+        assert!(format!("{deck:?}").contains("Page has no article container"));
+        let deck = deck_of(html, "https://notfandom.com/wiki/Other");
+        assert!(format!("{deck:?}").contains("Page has no article container"));
     }
 
     #[test]

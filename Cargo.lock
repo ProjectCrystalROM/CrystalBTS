@@ -7031,10 +7031,16 @@ dependencies = [
  "clap",
  "gw-transcode",
  "http",
+ "httpdate",
  "roxmltree",
+ "scraper",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "url",
+ "uuid",
 ]
 
 [[package]]

@@ -67,6 +67,7 @@ services:
       FOU_LISTEN_PORT: "17010"
       FOU_REMOTE_PORT: "17011"
       FOU_TCP_PORT: "17012"
+      FOU_MTU: "${FOU_MTU:-1500}"
       MOBILE_CIDR: "10.55.0.0/24"
       TUNNEL_ADDR: "10.55.0.1/24"
       FOU_LOCAL_IP: "127.0.0.1"
@@ -77,6 +78,9 @@ services:
       # via the BSC's PdsnManagementService facade for the X-1xBTS-MSISDN
       # header it injects into MMSC traffic.
       MGMT_GRPC_ADDR: "${MGMT_GRPC_ADDR:-host.docker.internal:17016}"
+      # HTTP carrier portal for phones provisioned with a Verizon proxy.
+      CARRIER_HTTP_ENABLE: "${CARRIER_HTTP_ENABLE:-0}"
+      CARRIER_HTTP_HIJACK_ENDPOINTS: "${CARRIER_HTTP_HIJACK_ENDPOINTS:-69.78.235.46:8080}"
       # Openwave UP.Link (HDTP) gateway. Comma-separated IP:port endpoints the
       # handset dials for its provisioned proxy are DNAT'd to the local gateway,
       # which browses the web and returns HDML. Set HDTP_ENABLE=0 to disable.
@@ -101,6 +105,28 @@ services:
       WAP_TRANSCODE_LOG: "${WAP_TRANSCODE_LOG:-info}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # The carrier portal needs the packet gateway's tunnel address, so it shares
+  # the fou-nat network namespace.  Keeping it as a Compose service makes its
+  # lifecycle visible to Compose instead of supervising it as a child process
+  # in the gateway entrypoint.
+  carrier-portal:
+    build:
+      context: .
+      dockerfile: docker/fou-nat/Dockerfile
+    container_name: 1xbts-carrier-portal
+    network_mode: "service:fou-nat"
+    depends_on:
+      - fou-nat
+    command: ["/usr/local/bin/wap-gw"]
+    environment:
+      WAP_GW_BIND: "${CARRIER_HTTP_BIND:-10.55.0.1:8091}"
+      WAP_GW_CARRIER_PORTAL: "true"
+      WAP_GW_PORTAL_STORE: "/var/lib/1xbts/portal"
+      RUST_LOG: "${CARRIER_HTTP_LOG:-info}"
+    volumes:
+      - carrier-portal-state:/var/lib/1xbts/portal
     restart: unless-stopped
 
   # Optional MMS profile: enable with `docker compose --profile mms up`.
@@ -229,6 +255,7 @@ networks:
         - subnet: "${FEMTO_EDGE_SUBNET:-172.31.0.0/24}"
 
 volumes:
+  carrier-portal-state:
   femto-state:
   postgres-data:
   1xbts-web-node-modules:

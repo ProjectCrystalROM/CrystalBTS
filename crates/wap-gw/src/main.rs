@@ -7,6 +7,7 @@
 //! own goes back exactly as the site sent it.
 
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -24,6 +25,7 @@ use gw_transcode::transcode::{self, Limits};
 use tracing::{info, warn};
 
 use wap_gw::is_handset_native;
+use wap_gw::portal::{Action, Portal};
 use wap_gw::wml::{CTYPE_WML, to_wml};
 
 /// Default upstream fetch timeout.
@@ -81,6 +83,22 @@ struct Args {
     #[arg(long, env = "WAP_GW_MAX_FIELDS", default_value_t = Limits::default().max_fields)]
     max_fields: usize,
 
+    /// Serve the Verizon carrier portal for HTTP-proxy handsets.
+    #[arg(long, env = "WAP_GW_CARRIER_PORTAL", default_value_t = false)]
+    carrier_portal: bool,
+
+    /// Render local portal pages as WML for Kannel's WAP client.
+    #[arg(long, env = "WAP_GW_PORTAL_WML", default_value_t = false)]
+    portal_wml: bool,
+
+    /// Directory holding persistent carrier portal sessions.
+    #[arg(
+        long,
+        env = "WAP_GW_PORTAL_STORE",
+        default_value = "/var/lib/1xbts/portal"
+    )]
+    portal_store: PathBuf,
+
     /// Upstream fetch timeout.
     #[arg(long, env = "WAP_GW_TIMEOUT_SECS", default_value_t = DEFAULT_TIMEOUT_SECS)]
     timeout_secs: u64,
@@ -98,6 +116,8 @@ struct Args {
 struct AppState {
     proxy: Proxy,
     limits: Limits,
+    portal: Option<Portal>,
+    portal_wml: bool,
 }
 
 #[tokio::main]
@@ -118,6 +138,12 @@ async fn main() -> anyhow::Result<()> {
     let state = Arc::new(AppState {
         proxy: Proxy::new(&args.user_agent, Duration::from_secs(args.timeout_secs))?,
         limits,
+        portal_wml: args.portal_wml,
+        portal: if args.carrier_portal {
+            Some(Portal::new(&args.portal_store)?)
+        } else {
+            None
+        },
     });
 
     let app = Router::new().fallback(handle).with_state(state);
@@ -127,23 +153,145 @@ async fn main() -> anyhow::Result<()> {
         max_blocks = limits.max_blocks,
         "wap-gw: HTML->WML proxy listening"
     );
-    axum::serve(listener, app).await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
     Ok(())
 }
 
 async fn handle(State(state): State<Arc<AppState>>, req: Request) -> Response {
     let (parts, body) = req.into_parts();
     let method = parts.method;
-    let uri = parts.uri.to_string();
-    let req_headers = forwardable_request_headers(&parts.headers);
+    let mut uri = parts.uri.to_string();
+    let mut issued_cookie: Option<String> = None;
+    let mut issued_wap_session: Option<String> = None;
+    let mut portal_fetch = false;
+    if let Some(portal) = &state.portal {
+        let host = parts.uri.host().unwrap_or("");
+        if host.eq_ignore_ascii_case("homepage") {
+            return (
+                StatusCode::FOUND,
+                [
+                    (header::LOCATION, "http://mw2.vzwwap.com/"),
+                    (header::CACHE_CONTROL, "no-store"),
+                ],
+            )
+                .into_response();
+        }
+        if host.eq_ignore_ascii_case("mw2.vzwwap.com") {
+            let session_cookie = parts
+                .headers
+                .get_all(header::COOKIE)
+                .iter()
+                .filter_map(|value| value.to_str().ok())
+                .flat_map(|value| value.split(';'))
+                .filter_map(|part| part.trim().split_once('='))
+                .find_map(|(name, value)| (name == "kozume_session").then_some(value));
+            // Kannel 1.4 does not encode Set-Cookie in connectionless WSP.
+            // A WAP client can carry the same session ID as an application header.
+            let session_cookie = session_cookie.or_else(|| {
+                state
+                    .portal_wml
+                    .then(|| parts.headers.get("x-kozume-session"))
+                    .flatten()
+                    .and_then(|value| value.to_str().ok())
+            });
+            let (session, fresh) = match portal.store.session(session_cookie) {
+                Ok(session) => session,
+                Err(error) => {
+                    warn!(%error, "portal session unavailable");
+                    return (
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "Portal storage unavailable",
+                    )
+                        .into_response();
+                }
+            };
+            if fresh {
+                if state.portal_wml {
+                    issued_wap_session = Some(session.clone());
+                }
+                let expires = httpdate::fmt_http_date(
+                    std::time::SystemTime::now() + Duration::from_secs(31_536_000),
+                );
+                issued_cookie = Some(format!(
+                    "kozume_session={session}; Path=/; Max-Age=31536000; Expires={expires}; HttpOnly"
+                ));
+            }
+            let action = portal.handle(&parts.uri, &session);
+            let page = match action {
+                Action::Page(page) => Some(page),
+                Action::Redirect => {
+                    return (
+                        StatusCode::FOUND,
+                        [(header::LOCATION, "http://mw2.vzwwap.com/")],
+                    )
+                        .into_response();
+                }
+                Action::Unavailable => {
+                    return (
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "Portal storage unavailable",
+                    )
+                        .into_response();
+                }
+                Action::Fetch(target) => {
+                    uri = target;
+                    portal_fetch = true;
+                    None
+                }
+                Action::WeatherLookup(zip) => {
+                    Some(wap_gw::weather::lookup(&state.proxy, &zip).await)
+                }
+                Action::WeatherForecast {
+                    latitude,
+                    longitude,
+                    name,
+                } => {
+                    Some(wap_gw::weather::forecast(&state.proxy, latitude, longitude, &name).await)
+                }
+                Action::Pass => None,
+            };
+            if let Some(page) = page {
+                let mut response = if state.portal_wml {
+                    let deck =
+                        transcode::html_to_deck(&page, "http://mw2.vzwwap.com/", &state.limits);
+                    wml_response(StatusCode::OK, &deck, None)
+                } else {
+                    ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], page).into_response()
+                };
+                response.headers_mut().insert(
+                    header::CACHE_CONTROL,
+                    header::HeaderValue::from_static("no-store"),
+                );
+                set_session_headers(
+                    &mut response,
+                    issued_cookie.as_deref(),
+                    issued_wap_session.as_deref(),
+                );
+                return response;
+            }
+        }
+    }
+    let mut req_headers = forwardable_request_headers(&parts.headers);
+    req_headers.remove("x-kozume-session");
+    if portal_fetch {
+        req_headers.remove(header::COOKIE);
+    }
 
     // A forward proxy is addressed in absolute form. Anything else is a client
     // that reached us directly and has no page to name.
     if !(uri.starts_with("http://") || uri.starts_with("https://")) {
-        return wml_response(
-            StatusCode::BAD_REQUEST,
-            &notice_deck("Bad request", "This is a proxy; ask for a full URL."),
-            None,
+        return session_response(
+            wml_response(
+                StatusCode::BAD_REQUEST,
+                &notice_deck("Bad request", "This is a proxy; ask for a full URL."),
+                None,
+            ),
+            issued_cookie.as_deref(),
+            issued_wap_session.as_deref(),
         );
     }
 
@@ -156,10 +304,14 @@ async fn handle(State(state): State<Arc<AppState>>, req: Request) -> Response {
                     // Submitting the form without its fields would look like a
                     // server-side failure to the handset, so say so instead.
                     warn!(%uri, error = %e, "wap-gw: unreadable request body");
-                    return wml_response(
-                        StatusCode::OK,
-                        &notice_deck("Too large", "That submission was too big to send."),
-                        None,
+                    return session_response(
+                        wml_response(
+                            StatusCode::OK,
+                            &notice_deck("Too large", "That submission was too big to send."),
+                            None,
+                        ),
+                        issued_cookie.as_deref(),
+                        issued_wap_session.as_deref(),
                     );
                 }
             };
@@ -167,10 +319,14 @@ async fn handle(State(state): State<Arc<AppState>>, req: Request) -> Response {
         }
         other => {
             warn!(%other, %uri, "wap-gw: unsupported method");
-            return wml_response(
-                StatusCode::METHOD_NOT_ALLOWED,
-                &notice_deck("Not supported", "That request type is not supported."),
-                None,
+            return session_response(
+                wml_response(
+                    StatusCode::METHOD_NOT_ALLOWED,
+                    &notice_deck("Not supported", "That request type is not supported."),
+                    None,
+                ),
+                issued_cookie.as_deref(),
+                issued_wap_session.as_deref(),
             );
         }
     };
@@ -194,7 +350,11 @@ async fn handle(State(state): State<Arc<AppState>>, req: Request) -> Response {
             // A fetch failure is still a deck: the handset renders the notice,
             // which is more use than the browser's own error card for a status
             // it cannot explain.
-            return wml_response(StatusCode::OK, &deck, None);
+            return session_response(
+                wml_response(StatusCode::OK, &deck, None),
+                issued_cookie.as_deref(),
+                issued_wap_session.as_deref(),
+            );
         }
     };
 
@@ -209,15 +369,37 @@ async fn handle(State(state): State<Arc<AppState>>, req: Request) -> Response {
 
     if is_handset_native(&page.content_type) {
         let status = StatusCode::from_u16(page.status).unwrap_or(StatusCode::BAD_GATEWAY);
-        return with_origin_headers(
+        let mut origin_headers = page.headers.clone();
+        if portal_fetch {
+            origin_headers.remove(header::SET_COOKIE);
+        }
+        let mut response = with_origin_headers(
             (status, page.bytes.clone()).into_response(),
-            &page.headers,
+            &origin_headers,
             &page.content_type,
         );
+        set_session_headers(
+            &mut response,
+            issued_cookie.as_deref(),
+            issued_wap_session.as_deref(),
+        );
+        return response;
     }
 
-    let deck = match page.body() {
-        FetchBody::Html(html) => transcode::html_to_deck(&html, &page.final_url, &state.limits),
+    let mut deck = match page.body() {
+        FetchBody::Html(html) => {
+            if state.portal.is_some()
+                && page
+                    .final_url
+                    .starts_with("https://lite.duckduckgo.com/lite/")
+            {
+                wap_gw::portal::search_results(&html).unwrap_or_else(|| {
+                    transcode::html_to_deck(&html, &page.final_url, &state.limits)
+                })
+            } else {
+                transcode::html_to_deck(&html, &page.final_url, &state.limits)
+            }
+        }
         FetchBody::Text(text) => transcode::text_to_deck(&text, "Page", &state.limits),
         FetchBody::Other => notice_deck(
             "Not shown",
@@ -227,7 +409,45 @@ async fn handle(State(state): State<Arc<AppState>>, req: Request) -> Response {
             ),
         ),
     };
-    wml_response(StatusCode::OK, &deck, Some(&page.headers))
+    if state.portal.is_some() {
+        wap_gw::portal::route_secure_links(&mut deck);
+        wap_gw::portal::limit_deck(&mut deck, 8192);
+    }
+    if state.portal.is_some() {
+        let mut headers = HeaderMap::new();
+        if !portal_fetch {
+            for value in page.headers.get_all(header::SET_COOKIE) {
+                headers.append(header::SET_COOKIE, value.clone());
+            }
+        }
+        let mut response = wml_response(StatusCode::OK, &deck, Some(&headers));
+        set_session_headers(
+            &mut response,
+            issued_cookie.as_deref(),
+            issued_wap_session.as_deref(),
+        );
+        response
+    } else {
+        wml_response(StatusCode::OK, &deck, Some(&page.headers))
+    }
+}
+
+fn session_response(
+    mut response: Response,
+    cookie: Option<&str>,
+    wap_session: Option<&str>,
+) -> Response {
+    set_session_headers(&mut response, cookie, wap_session);
+    response
+}
+
+fn set_session_headers(response: &mut Response, cookie: Option<&str>, wap_session: Option<&str>) {
+    if let Some(value) = cookie.and_then(|s| header::HeaderValue::from_str(s).ok()) {
+        response.headers_mut().append(header::SET_COOKIE, value);
+    }
+    if let Some(value) = wap_session.and_then(|s| header::HeaderValue::from_str(s).ok()) {
+        response.headers_mut().insert("x-kozume-session", value);
+    }
 }
 
 /// A WML reply. `origin` carries the fetched page's headers on to the handset

@@ -4,6 +4,7 @@ set -eu
 FOU_LISTEN_PORT="${FOU_LISTEN_PORT:-5555}"
 FOU_REMOTE_PORT="${FOU_REMOTE_PORT:-5556}"
 FOU_TCP_PORT="${FOU_TCP_PORT:-5557}"
+FOU_MTU="${FOU_MTU:-1500}"
 MOBILE_CIDR="${MOBILE_CIDR:-10.55.0.0/24}"
 TUNNEL_ADDR="${TUNNEL_ADDR:-10.55.0.1/24}"
 FOU_LOCAL_IP="${FOU_LOCAL_IP:-127.0.0.1}"
@@ -18,6 +19,10 @@ MMSC_HIJACK_HOSTS="${MMSC_HIJACK_HOSTS:-mms.vtext.com,mmsc.vtext.com,mms.myvzw.c
 
 EDGE_RESOLVER_BIND="${EDGE_RESOLVER_BIND:-127.0.0.1:8088}"
 MGMT_GRPC_ADDR="${MGMT_GRPC_ADDR:-host.docker.internal:17016}"
+
+CARRIER_HTTP_ENABLE="${CARRIER_HTTP_ENABLE:-0}"
+CARRIER_HTTP_PORT="${CARRIER_HTTP_PORT:-8091}"
+CARRIER_HTTP_HIJACK_ENDPOINTS="${CARRIER_HTTP_HIJACK_ENDPOINTS:-69.78.235.46:8080}"
 
 # HDTP (Openwave UP.Link) gateway. A UP.Browser dials a fixed proxy IP over
 # UDP, so a DNAT (below) redirects those endpoints to the local gateway rather
@@ -70,7 +75,7 @@ ip link add fou0 type ipip \
   encap-sport "$FOU_LISTEN_PORT" \
   encap-dport "$FOU_REMOTE_PORT"
 ip addr add "$TUNNEL_ADDR" dev fou0
-ip link set fou0 up
+ip link set fou0 mtu "$FOU_MTU" up
 
 iptables -t nat -C POSTROUTING -s "$MOBILE_CIDR" -o eth0 -j MASQUERADE 2>/dev/null \
   || iptables -t nat -A POSTROUTING -s "$MOBILE_CIDR" -o eth0 -j MASQUERADE
@@ -105,6 +110,20 @@ if [ "$HDTP_ENABLE" = "1" ]; then
           || iptables -t nat -A PREROUTING -i fou0 -p udp -d "$hip" --dport "$hport" \
             -j DNAT --to-destination "${GATEWAY_IP}:${HDTP_GW_PORT}"
         echo "HDTP hijack ${hip}:${hport} -> ${GATEWAY_IP}:${HDTP_GW_PORT}"
+    done
+fi
+
+# Redirect only configured TCP proxy endpoints to the HTTP carrier portal.
+if [ "$CARRIER_HTTP_ENABLE" = "1" ]; then
+    for ep in $(printf '%s\n' "$CARRIER_HTTP_HIJACK_ENDPOINTS" | tr ',' ' '); do
+        cip="${ep%%:*}"
+        cport="${ep##*:}"
+        [ -n "$cip" ] && [ -n "$cport" ] || continue
+        iptables -t nat -C PREROUTING -i fou0 -p tcp -d "$cip" --dport "$cport" \
+            -j DNAT --to-destination "${GATEWAY_IP}:${CARRIER_HTTP_PORT}" 2>/dev/null \
+          || iptables -t nat -A PREROUTING -i fou0 -p tcp -d "$cip" --dport "$cport" \
+            -j DNAT --to-destination "${GATEWAY_IP}:${CARRIER_HTTP_PORT}"
+        echo "Carrier HTTP hijack ${cip}:${cport} -> ${GATEWAY_IP}:${CARRIER_HTTP_PORT}"
     done
 fi
 
@@ -340,6 +359,9 @@ if [ "$WAP_ENABLE" = "1" ]; then
     # Left unset, the transcoder keeps its own built-in cap.
     if [ -n "$WAP_TRANSCODE_MAX_BLOCKS" ]; then
         export WAP_GW_MAX_BLOCKS="$WAP_TRANSCODE_MAX_BLOCKS"
+    fi
+    if [ "$CARRIER_HTTP_ENABLE" = "1" ]; then
+        export WAP_GW_CARRIER_PORTAL=true WAP_GW_PORTAL_WML=true
     fi
     WAP_GW_BIND="$WAP_TRANSCODE_BIND" RUST_LOG="$WAP_TRANSCODE_LOG" \
         /usr/local/bin/wap-gw &

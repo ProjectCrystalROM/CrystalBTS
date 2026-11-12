@@ -73,11 +73,16 @@ two cannot be mixed.
 | 17015 | gRPC     | Voice GW   | SIP/media bridge (cdma-voice-gw) | `msc.json: voice.gateway.endpoint` |
 | 17010 | UDP      | PDSN (remote) | FOU tunnel remote endpoint    | `pdsn.json: packet.fou_remote`     |
 | 17011 | UDP      | PDSN (local)  | FOU tunnel local port         | `pdsn.json: packet.fou_local_port` |
+
 | 45432 | TCP      | PostgreSQL | HLR + SMSC database (`1xbts`)    | `hlr.json: postgres_dsn`, `smsc.json: postgres_dsn` |
 | 3000  | HTTP     | 1xbts-web   | Web dashboard dev server         | `docker-compose.yml: 1xbts-web`, `ONEXBTS_WEB_PORT` |
 | 5656  | HTTP     | Speed test  | Host access to FOU gateway proxy | `docker-compose.yml: fou-nat`, `SPEEDTEST_PORT` |
 | 80    | HTTP     | FOU gateway | Mobile access to speed test (`http://speed/`, `http://speed.local.1xbts.org/`) | `docker/fou-nat`, nginx proxy |
+| 8091  | HTTP     | FOU gateway | Optional carrier HTTP proxy on the mobile tunnel | `CARRIER_HTTP_ENABLE`, `CARRIER_HTTP_HIJACK_ENDPOINTS` |
 | 53    | DNS      | FOU gateway | Mobile DNS resolver for packet data | `docker/fou-nat`, Unbound; `pdsn.json: packet.primary_dns` |
+
+The mobile FOU tunnel uses a 1500-byte MTU by default; set `FOU_MTU` to
+override it when the mobile link requires a different packet size.
 
 ## Quick reference
 

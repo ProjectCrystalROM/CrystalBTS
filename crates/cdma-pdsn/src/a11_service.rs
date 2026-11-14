@@ -320,7 +320,11 @@ fn packet_metadata_from_a11(
         match a11_msid_bcd_to_imsi(&request.session.mn_id) {
             // A 1x base station sends the subscriber's IMSI. An HRPD AN may
             // send an MN ID derived from the hardware identity instead.
-            Ok(id) if access_technology == "1x" => (Some(id.clone()), Some(id)),
+            // Some femtos put a 10- or 11-digit MDN-style MSID in the
+            // IMSI-typed field. Only a full IMSI is safe to send to the HLR
+            // IMSI lookup; keep shorter values as the A11 MN ID for the
+            // phone-number fallback below.
+            Ok(id) if access_technology == "1x" && id.len() == 15 => (Some(id.clone()), Some(id)),
             Ok(id) => (None, Some(id)),
             Err(_) => match a11_msid_tbcd_to_imsi(&request.session.mn_id) {
                 Ok(id) => (Some(id.clone()), Some(id)),
@@ -354,6 +358,32 @@ fn packet_metadata_from_a11(
         }),
         traffic_walsh_code: 0,
     }
+}
+
+fn a11_msid_phone_candidates(mn_id: &str) -> Vec<&str> {
+    let mut candidates = vec![mn_id];
+    if mn_id.len() == 11 && mn_id.starts_with('1') {
+        candidates.push(&mn_id[1..]);
+    }
+    candidates
+}
+
+fn apply_hlr_subscriber(
+    metadata: &mut cdma_packet::session_task::SessionMetadata,
+    resolved: cdma_hlr::model::ResolvedSubscriber,
+) {
+    metadata.subscriber_id = Some(resolved.subscriber.subscriber_id.to_string());
+    metadata.phone_number = resolved.subscriber.phone_number;
+    metadata.subscriber_imsi = resolved
+        .primary_identity
+        .as_ref()
+        .and_then(|identity| identity.imsi.clone())
+        .or_else(|| {
+            resolved
+                .identities
+                .iter()
+                .find_map(|identity| identity.imsi.clone())
+        });
 }
 
 /// 0xffff is reserved and the codec rejects it, so an infinite request
@@ -632,15 +662,13 @@ pub(crate) async fn spawn_pdsn_a11_service_with_hlr(
             let mut metadata = packet_metadata_from_a11(key, &request);
             if let (Some(hlr), Some(imsi), Some(serving_bs_id)) = (
                 hlr.as_deref(),
-                metadata.imsi.as_deref(),
+                metadata.imsi.clone(),
                 pdsn_config.serving_bs_id.as_deref(),
             ) {
-                match hlr.resolve_registered_imsi(imsi, serving_bs_id).await {
+                match hlr.resolve_registered_imsi(&imsi, serving_bs_id).await {
                     Ok(Some(resolved)) => {
-                        metadata.subscriber_id =
-                            Some(resolved.subscriber.subscriber_id.to_string());
-                        metadata.phone_number = resolved.subscriber.phone_number;
-                        metadata.subscriber_imsi = Some(imsi.to_string());
+                        apply_hlr_subscriber(&mut metadata, resolved);
+                        metadata.subscriber_imsi = Some(imsi);
                     }
                     Ok(None) => warn!(
                         "PDSN A11: no HLR registration binding for IMSI session {key:?} on {serving_bs_id}"
@@ -648,6 +676,24 @@ pub(crate) async fn spawn_pdsn_a11_service_with_hlr(
                     Err(error) => warn!(
                         "PDSN A11: HLR registration lookup failed for session {key:?} on {serving_bs_id}: {error}"
                     ),
+                }
+            } else if metadata.access_technology == "1x" {
+                if let (Some(hlr), Some(mn_id)) = (hlr.as_deref(), metadata.mn_id.as_deref()) {
+                    for phone_number in a11_msid_phone_candidates(mn_id) {
+                        match hlr.get_subscriber_by_phone_number(phone_number).await {
+                            Ok(Some(resolved)) => {
+                                apply_hlr_subscriber(&mut metadata, resolved);
+                                break;
+                            }
+                            Ok(None) => continue,
+                            Err(error) => {
+                                warn!(
+                                    "PDSN A11: HLR MSID phone lookup failed for session {key:?}: {error}"
+                                );
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             let service_option =
@@ -736,6 +782,15 @@ mod tests {
                 mn_session_reference_id: key.mn_session_reference_id,
             })
         );
+    }
+
+    #[test]
+    fn a11_msid_phone_candidates_try_national_number_after_leading_one() {
+        assert_eq!(
+            a11_msid_phone_candidates("13178675309"),
+            vec!["13178675309", "3178675309"]
+        );
+        assert_eq!(a11_msid_phone_candidates("3178675309"), vec!["3178675309"]);
     }
 
     #[test]

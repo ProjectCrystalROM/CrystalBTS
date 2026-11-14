@@ -1,5 +1,16 @@
 # HEAD
 
+- Route SSD update messages through the femtocell bridge for A-key provisioning.
+
+- Make links easier to tap in the Android WAP browser.
+- Prioritize Fandom article text when transcoding pages for legacy browsers.
+
+- Preserve fragmented packet payloads and checksums in the FOU TCP relay.
+
+- Add an experimental Android 2.2 WAP/WML browser for 1xBTS.
+
+- Add an opt-in carrier portal with ZIP-code weather and persistent cookie-based settings for legacy browsers.
+
 - Ignore inactive call identities when correlating femtocell OTASP replies.
 - Improve traffic channel FER (RC1/RC2/RC3).
 - Web UI UX updates.

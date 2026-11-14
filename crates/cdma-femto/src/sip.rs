@@ -2987,6 +2987,50 @@ impl ImsCore {
                 response.status,
                 response.reason
             );
+            // Airave 2.x acknowledges Fx2 BSMAP commands at the SIP
+            // transaction layer.  In particular, it does not send a separate
+            // FemtoInterface Assignment Complete MESSAGE after accepting an
+            // Assignment Request.  The MSC, however, must see the A1
+            // AssignmentComplete before it may send the traffic-channel ADDS
+            // Page.  Treat the successful Fx2 transaction as that completion.
+            //
+            // Voice assignments use the SIP dialog/PRACK path above and are
+            // not recorded in `pending_downlink`, so this is deliberately
+            // limited to generic Fx2 downlink transactions (including MT SMS).
+            if transaction.message_type == MessageType::AssignmentRequest
+                && (SC_OK..300).contains(&response.status)
+                && let Some(a1_call_id) = transaction.a1_call_id
+            {
+                let complete = AssignmentCompleteMessage {
+                    channel_number: ChannelNumber(0),
+                    encryption_information: None,
+                    service_option: None,
+                    a2p_bearer_session_params: None,
+                    a2p_bearer_format_params: None,
+                };
+                match complete.encode() {
+                    Ok(payload) => {
+                        self.forward_to_msc(
+                            "synthesizing Airave Fx2 Assignment Complete from SIP success",
+                            None,
+                            EncodedA1Message::from_message_for_call(
+                                &Message::new(MessageType::AssignmentComplete, payload),
+                                Some(a1_call_id),
+                            ),
+                            UplinkObservation::A1Wire,
+                            crate::event::A1Context::default(),
+                        );
+                        log::info!(
+                            "FCS: Fx2 AssignmentRequest call_id={a1_call_id} completed from SIP success"
+                        );
+                    }
+                    Err(error) => {
+                        log::warn!(
+                            "FCS: encoding synthesized Fx2 Assignment Complete for call_id={a1_call_id}: {error}"
+                        );
+                    }
+                }
+            }
         } else {
             log::debug!(
                 "SIP response {} {} call-id={call_id}",
@@ -3638,8 +3682,9 @@ mod tests {
     use crate::config::{FapDefinition, FapImplementationKind, FapProfileConfig, FemtoSiteConfig};
     use cdma_ios::femto_interface_msg::{Discriminator, FemtoIe, FemtoInterfaceMsg};
     use cdma_ios::{
-        AddsPageMessage, AddsUserPart, AssignmentRequestMessage, ChannelType,
-        CompleteLayer3InformationMessage, MessageType, MobileIdentity, ServiceOption, Tag,
+        AddsPageMessage, AddsUserPart, AssignmentCompleteMessage, AssignmentRequestMessage,
+        ChannelType, CompleteLayer3InformationMessage, MessageType, MobileIdentity, ServiceOption,
+        Tag,
     };
     use cdma_sip::message::Method;
     use std::collections::BTreeMap;
@@ -5968,6 +6013,37 @@ mod tests {
             request.headers.to(),
             Some("<sip:5551239999@femto.local.1xbts.org>")
         );
+    }
+
+    #[test]
+    fn airave_fx2_assignment_sip_success_completes_a1_assignment() {
+        let (msc_tx, mut msc_rx) = mpsc::channel(1);
+        let core = airave_core_with_msc(&config(false), FemtoCellState::untracked(), Some(msc_tx));
+        let sip_call_id = "airave-fx2-assignment-1".to_string();
+        core.pending_downlink
+            .lock()
+            .expect("pending downlink lock")
+            .insert(
+                sip_call_id.clone(),
+                PendingDownlink {
+                    message_type: MessageType::AssignmentRequest,
+                    a1_call_id: Some(41),
+                    adds_page_ack: None,
+                },
+            );
+        let mut request = SipRequest::new(Method::Message, "sip:fap@femto.local.1xbts.org");
+        request.headers.append("Call-ID", &sip_call_id);
+
+        core.handle_downlink_response(&response(&request, SC_OK, "OK"));
+
+        let completion = msc_rx.try_recv().expect("synthesized Assignment Complete");
+        assert_eq!(completion.call_id(), Some(41));
+        assert_eq!(completion.message_type(), MessageType::AssignmentComplete);
+        let decoded = completion.decode().expect("decode Assignment Complete");
+        let complete = AssignmentCompleteMessage::decode(&decoded.payload)
+            .expect("Assignment Complete payload");
+        assert_eq!(complete.channel_number, ChannelNumber(0));
+        assert!(complete.a2p_bearer_session_params.is_none());
     }
 
     #[test]

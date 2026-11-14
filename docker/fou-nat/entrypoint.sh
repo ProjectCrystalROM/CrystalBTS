@@ -15,7 +15,7 @@ GATEWAY_IP="${TUNNEL_ADDR%%/*}"
 
 # Carrier MMSC hostnames redirected to our local Mbuni MMSC.
 # Architecture: https://1xbts.org/docs/guides/mms
-MMSC_HIJACK_HOSTS="${MMSC_HIJACK_HOSTS:-mms.vtext.com,mmsc.vtext.com,mms.myvzw.com,mmsc.sprintpcs.com,mms.sprintpcs.com,mmsc.mobile.att.net,mmsc.cingular.com,mms.msg.eng.t-mobile.com,mms.t-mobile.com,mmsc.uscc.net,mmsc.aiowireless.net}"
+MMSC_HIJACK_HOSTS="${MMSC_HIJACK_HOSTS:-mms.vtext.com,mmsc.vtext.com,mms.myvzw.com,mms.vzwreseller.com,mmsc.vzwreseller.com,mmsc.sprintpcs.com,mms.sprintpcs.com,mmsc.mobile.att.net,mmsc.cingular.com,mms.msg.eng.t-mobile.com,mms.t-mobile.com,mmsc.uscc.net,mmsc.aiowireless.net}"
 
 EDGE_RESOLVER_BIND="${EDGE_RESOLVER_BIND:-127.0.0.1:8088}"
 MGMT_GRPC_ADDR="${MGMT_GRPC_ADDR:-host.docker.internal:17016}"

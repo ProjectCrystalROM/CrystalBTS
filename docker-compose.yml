@@ -130,7 +130,10 @@ services:
     network_mode: "service:fou-nat"
     depends_on:
       - fou-nat
-    command: ["/usr/local/bin/wap-gw"]
+    # This image's default entrypoint bootstraps the privileged FoU gateway.
+    # The portal shares that gateway's network namespace and must invoke only
+    # the portal server, not the FoU bootstrap script again.
+    entrypoint: ["/usr/local/bin/wap-gw"]
     environment:
       WAP_GW_BIND: "${CARRIER_HTTP_BIND:-10.55.0.1:8091}"
       WAP_GW_CARRIER_PORTAL: "true"
@@ -267,6 +270,11 @@ networks:
 
 volumes:
   carrier-portal-state:
+    # Created before the portal became a Compose service. Keep its existing
+    # contents and make that ownership explicit so `compose up` does not
+    # warn or attempt to replace it.
+    external: true
+    name: 1xbts_carrier-portal-state
   femto-state:
   postgres-data:
   1xbts-web-node-modules:

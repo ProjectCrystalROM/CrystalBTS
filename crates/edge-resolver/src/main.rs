@@ -27,8 +27,8 @@ pub mod packet {
     }
 }
 
-use pdsn_management::v1::GetPdsnSessionByIpRequest;
-use pdsn_management::v1::pdsn_management_service_client::PdsnManagementServiceClient;
+use packet::v1::GetSessionByIpRequest;
+use packet::v1::packet_service_client::PacketServiceClient;
 
 /// Header name we set on the resolver response. nginx copies it to the
 /// upstream request via `auth_request_set $msisdn $upstream_http_x_1xbts_msisdn`.
@@ -36,7 +36,7 @@ const MSISDN_HEADER: &str = "X-1xBTS-MSISDN";
 
 #[derive(Clone)]
 struct ResolverState {
-    pdsn: PdsnManagementServiceClient<Channel>,
+    pdsn: PacketServiceClient<Channel>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -53,16 +53,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bind: SocketAddr = env::var("BIND_ADDR")
         .unwrap_or_else(|_| "127.0.0.1:8088".to_string())
         .parse()?;
-    let mgmt_addr = env::var("MGMT_GRPC_ADDR").unwrap_or_else(|_| "127.0.0.1:17016".to_string());
+    let mgmt_addr = env::var("MGMT_GRPC_ADDR").unwrap_or_else(|_| "127.0.0.1:17021".to_string());
     let mgmt_endpoint = if mgmt_addr.starts_with("http://") || mgmt_addr.starts_with("https://") {
         mgmt_addr.clone()
     } else {
         format!("http://{mgmt_addr}")
     };
 
-    info!("edge-resolver: connecting to BSC PdsnManagementService at {mgmt_endpoint}");
+    info!("edge-resolver: connecting to PDSN PacketService at {mgmt_endpoint}");
     let channel = Endpoint::from_shared(mgmt_endpoint.clone())?.connect_lazy();
-    let pdsn = PdsnManagementServiceClient::new(channel);
+    let pdsn = PacketServiceClient::new(channel);
 
     let state = Arc::new(ResolverState { pdsn });
     let app = Router::new()
@@ -113,10 +113,10 @@ async fn resolve_msisdn(state: &ResolverState, params: &ResolveParams) -> String
     };
 
     let mut client = state.pdsn.clone();
-    let request = GetPdsnSessionByIpRequest {
+    let request = GetSessionByIpRequest {
         peer_ip: ip.to_string(),
     };
-    match client.get_pdsn_session_by_ip(request).await {
+    match client.get_session_by_ip(request).await {
         Ok(response) => match response.into_inner().session {
             Some(session) if !session.phone_number.is_empty() => {
                 info!(
@@ -145,12 +145,11 @@ async fn resolve_msisdn(state: &ResolverState, params: &ResolveParams) -> String
 mod tests {
     use super::*;
     use async_trait::async_trait;
-    use packet::v1::{GetSessionByIpResponse, PacketSessionInfo};
-    use pdsn_management::v1::pdsn_management_service_server::{
-        PdsnManagementService, PdsnManagementServiceServer,
-    };
-    use pdsn_management::v1::{
-        GetPdsnSessionRequest, PdsnSessionList, SetPacketTraceCaptureRequest,
+    use packet::v1::packet_service_server::{PacketService, PacketServiceServer};
+    use packet::v1::{
+        GetSessionByIpResponse, GetSessionStatusRequest, GetSessionStatusResponse,
+        ListSessionsRequest, ListSessionsResponse, PacketSessionInfo, SetSessionCaptureRequest,
+        SetSessionCaptureResponse,
     };
     use std::sync::Mutex;
     use tonic::transport::Server;
@@ -177,24 +176,24 @@ mod tests {
     }
 
     #[async_trait]
-    impl PdsnManagementService for MockPdsn {
-        async fn list_pdsn_sessions(
+    impl PacketService for MockPdsn {
+        async fn get_session_status(
             &self,
-            _: Request<()>,
-        ) -> Result<Response<PdsnSessionList>, Status> {
+            _: Request<GetSessionStatusRequest>,
+        ) -> Result<Response<GetSessionStatusResponse>, Status> {
             Err(Status::unimplemented(""))
         }
 
-        async fn get_pdsn_session(
+        async fn list_sessions(
             &self,
-            _: Request<GetPdsnSessionRequest>,
-        ) -> Result<Response<packet::v1::GetSessionStatusResponse>, Status> {
+            _: Request<ListSessionsRequest>,
+        ) -> Result<Response<ListSessionsResponse>, Status> {
             Err(Status::unimplemented(""))
         }
 
-        async fn get_pdsn_session_by_ip(
+        async fn get_session_by_ip(
             &self,
-            request: Request<GetPdsnSessionByIpRequest>,
+            request: Request<GetSessionByIpRequest>,
         ) -> Result<Response<GetSessionByIpResponse>, Status> {
             let req = request.into_inner();
             *self.last_request.lock().unwrap() = Some(req.peer_ip.clone());
@@ -208,10 +207,10 @@ mod tests {
             }
         }
 
-        async fn set_packet_trace_capture(
+        async fn set_session_capture(
             &self,
-            _: Request<SetPacketTraceCaptureRequest>,
-        ) -> Result<Response<packet::v1::SetSessionCaptureResponse>, Status> {
+            _: Request<SetSessionCaptureRequest>,
+        ) -> Result<Response<SetSessionCaptureResponse>, Status> {
             Err(Status::unimplemented(""))
         }
     }
@@ -224,36 +223,34 @@ mod tests {
         tokio::spawn(async move {
             struct Svc(Arc<MockPdsn>);
             #[async_trait]
-            impl PdsnManagementService for Svc {
-                async fn list_pdsn_sessions(
+            impl PacketService for Svc {
+                async fn get_session_status(
                     &self,
-                    request: Request<()>,
-                ) -> Result<Response<PdsnSessionList>, Status> {
-                    self.0.list_pdsn_sessions(request).await
+                    request: Request<GetSessionStatusRequest>,
+                ) -> Result<Response<GetSessionStatusResponse>, Status> {
+                    self.0.get_session_status(request).await
                 }
-                async fn get_pdsn_session(
+                async fn list_sessions(
                     &self,
-                    request: Request<GetPdsnSessionRequest>,
-                ) -> Result<Response<packet::v1::GetSessionStatusResponse>, Status>
-                {
-                    self.0.get_pdsn_session(request).await
+                    request: Request<ListSessionsRequest>,
+                ) -> Result<Response<ListSessionsResponse>, Status> {
+                    self.0.list_sessions(request).await
                 }
-                async fn get_pdsn_session_by_ip(
+                async fn get_session_by_ip(
                     &self,
-                    request: Request<GetPdsnSessionByIpRequest>,
+                    request: Request<GetSessionByIpRequest>,
                 ) -> Result<Response<GetSessionByIpResponse>, Status> {
-                    self.0.get_pdsn_session_by_ip(request).await
+                    self.0.get_session_by_ip(request).await
                 }
-                async fn set_packet_trace_capture(
+                async fn set_session_capture(
                     &self,
-                    request: Request<SetPacketTraceCaptureRequest>,
-                ) -> Result<Response<packet::v1::SetSessionCaptureResponse>, Status>
-                {
-                    self.0.set_packet_trace_capture(request).await
+                    request: Request<SetSessionCaptureRequest>,
+                ) -> Result<Response<SetSessionCaptureResponse>, Status> {
+                    self.0.set_session_capture(request).await
                 }
             }
             let _ = Server::builder()
-                .add_service(PdsnManagementServiceServer::new(Svc(pdsn_clone)))
+                .add_service(PacketServiceServer::new(Svc(pdsn_clone)))
                 .serve_with_incoming(tokio_stream::wrappers::TcpListenerStream::new(listener))
                 .await;
         });
@@ -265,7 +262,7 @@ mod tests {
             .unwrap()
             .connect_lazy();
         let state = Arc::new(ResolverState {
-            pdsn: PdsnManagementServiceClient::new(endpoint),
+            pdsn: PacketServiceClient::new(endpoint),
         });
         let app = Router::new()
             .route("/_msisdn", get(handle_resolve))

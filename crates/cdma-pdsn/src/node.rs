@@ -12,8 +12,7 @@ use cdma_common::startup::wait_for_shutdown;
 use log::info;
 
 use crate::{
-    PdsnNodeConfig, build_packet_service_with_sink, packet_grpc_endpoint,
-    run_packet_grpc_server_on, spawn_pdsn_a11_service,
+    PdsnNodeConfig, build_packet_service_with_sink, packet_grpc_endpoint, run_packet_grpc_server_on,
 };
 
 /// PDSN node config file name within the config directory.
@@ -47,7 +46,33 @@ pub async fn run_node(config_dir: &Path) -> Result<(), Box<dyn std::error::Error
         };
 
     let packet_service = build_packet_service_with_sink(&config, lifecycle_sink)?;
-    let a11_addr = spawn_pdsn_a11_service(config.clone(), packet_service.clone()).await?;
+    let hlr: Option<Arc<dyn cdma_hlr::repository::HlrRepository>> = match config
+        .hlr_endpoint
+        .as_deref()
+    {
+        // Lazy, so an HLR that starts after the PDSN is still used.
+        Some(endpoint) => match cdma_hlr::repository::GrpcHlrRepository::connect_lazy(endpoint) {
+            Ok(repo) => {
+                info!("PDSN HLR endpoint {endpoint}");
+                Some(Arc::new(repo))
+            }
+            Err(error) => {
+                log::warn!(
+                    "PDSN HLR endpoint {endpoint} is invalid: {error}; subscriber enrichment disabled"
+                );
+                None
+            }
+        },
+        None => None,
+    };
+    let a11_addr = crate::a11_service::spawn_pdsn_a11_service_with_hlr(
+        config.clone(),
+        Arc::new(crate::PacketServicePdsnA10Adapter::new(
+            packet_service.clone(),
+        )),
+        hlr.clone(),
+    )
+    .await?;
     info!("PDSN A11 signaling on {a11_addr}");
 
     if config.a12.enabled {
@@ -56,27 +81,7 @@ pub async fn run_node(config_dir: &Path) -> Result<(), Box<dyn std::error::Error
             .listen
             .parse()
             .map_err(|e| format!("A12 listen addr {} invalid: {e}", config.a12.listen))?;
-        let hlr: Option<Arc<dyn cdma_hlr::repository::HlrRepository>> = match config
-            .hlr_endpoint
-            .as_deref()
-        {
-            // Lazy, so an HLR that starts after the PDSN is still used.
-            Some(endpoint) => match cdma_hlr::repository::GrpcHlrRepository::connect_lazy(endpoint)
-            {
-                Ok(repo) => {
-                    info!("A12 AN-AAA using HLR at {endpoint}");
-                    Some(Arc::new(repo))
-                }
-                Err(error) => {
-                    log::warn!(
-                        "A12 AN-AAA HLR endpoint {endpoint} is invalid: {error}; hardware ID lookup disabled"
-                    );
-                    None
-                }
-            },
-            None => None,
-        };
-        let a12 = cdma_a12::A12Server::with_hlr(config.a12.clone(), hlr);
+        let a12 = cdma_a12::A12Server::with_hlr(config.a12.clone(), hlr.clone());
         tokio::spawn(async move {
             if let Err(error) = a12.serve(a12_addr).await {
                 log::error!("A12 AN-AAA stopped: {error}");

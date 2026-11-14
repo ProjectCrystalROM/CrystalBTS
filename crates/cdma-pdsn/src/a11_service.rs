@@ -439,16 +439,18 @@ pub async fn spawn_pdsn_a11_service(
     pdsn_config: PdsnNodeConfig,
     packet_service: Arc<cdma_packet::grpc::PacketServiceImpl>,
 ) -> Result<SocketAddr, Error> {
-    spawn_pdsn_a11_service_with_a10_service(
+    spawn_pdsn_a11_service_with_hlr(
         pdsn_config,
         Arc::new(PacketServicePdsnA10Adapter::new(packet_service)),
+        None,
     )
     .await
 }
 
-pub(crate) async fn spawn_pdsn_a11_service_with_a10_service(
+pub(crate) async fn spawn_pdsn_a11_service_with_hlr(
     pdsn_config: PdsnNodeConfig,
     a10_byte_stream_service: Arc<dyn PdsnA10ByteStreamService>,
+    hlr: Option<Arc<dyn cdma_hlr::repository::HlrRepository>>,
 ) -> Result<SocketAddr, Error> {
     let a10_local_ipv4 = configured_a10_local_ipv4(
         &pdsn_config.a10_bearer,
@@ -627,7 +629,27 @@ pub(crate) async fn spawn_pdsn_a11_service_with_a10_service(
                 }
             }
             let session_id = a10_packet_session_id(key);
-            let metadata = packet_metadata_from_a11(key, &request);
+            let mut metadata = packet_metadata_from_a11(key, &request);
+            if let (Some(hlr), Some(imsi), Some(serving_bs_id)) = (
+                hlr.as_deref(),
+                metadata.imsi.as_deref(),
+                pdsn_config.serving_bs_id.as_deref(),
+            ) {
+                match hlr.resolve_registered_imsi(imsi, serving_bs_id).await {
+                    Ok(Some(resolved)) => {
+                        metadata.subscriber_id =
+                            Some(resolved.subscriber.subscriber_id.to_string());
+                        metadata.phone_number = resolved.subscriber.phone_number;
+                        metadata.subscriber_imsi = Some(imsi.to_string());
+                    }
+                    Ok(None) => warn!(
+                        "PDSN A11: no HLR registration binding for IMSI session {key:?} on {serving_bs_id}"
+                    ),
+                    Err(error) => warn!(
+                        "PDSN A11: HLR registration lookup failed for session {key:?} on {serving_bs_id}: {error}"
+                    ),
+                }
+            }
             let service_option =
                 a11_service_option(&request).unwrap_or(SERVICE_OPTION_PACKET_DATA_RC3);
             match a10_byte_stream_service.open_pdsn_a10_byte_stream(

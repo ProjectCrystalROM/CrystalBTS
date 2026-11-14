@@ -75,9 +75,9 @@ services:
       LOCAL_DNS_ZONE: "local.1xbts.org"
       UNBOUND_FORWARD_ADDRS: ${UNBOUND_FORWARD_ADDRS:-8.8.8.8}
       # Used by the edge-resolver sidecar to look up subscriber MSISDN
-      # via the BSC's PdsnManagementService facade for the X-1xBTS-MSISDN
-      # header it injects into MMSC traffic.
-      MGMT_GRPC_ADDR: "${MGMT_GRPC_ADDR:-host.docker.internal:17016}"
+      # via the PDSN PacketService on the private Compose gateway for the
+      # X-1xBTS-MSISDN header it injects into MMSC traffic.
+      MGMT_GRPC_ADDR: "${MGMT_GRPC_ADDR:-172.19.0.1:17021}"
       # HTTP carrier portal for phones provisioned with a Verizon proxy.
       CARRIER_HTTP_ENABLE: "${CARRIER_HTTP_ENABLE:-0}"
       CARRIER_HTTP_HIJACK_ENDPOINTS: "${CARRIER_HTTP_HIJACK_ENDPOINTS:-69.78.235.46:8080}"

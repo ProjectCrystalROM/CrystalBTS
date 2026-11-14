@@ -1,5 +1,5 @@
 {
-  "packet_grpc_listen_addr": "127.0.0.1:17021",
+  "packet_grpc_listen_addr": "172.19.0.1:17021",
   "a10_bearer": {
     "mode": "udp_encapsulated_gre",
     "udp_bind_addr": "127.0.0.1:17043",
@@ -47,5 +47,6 @@
     "accept_unverified_chap": true,
     "validate_subscribers": false
   },
-  "hlr_endpoint": "http://127.0.0.1:17019"
+  "hlr_endpoint": "http://127.0.0.1:17019",
+  "serving_bs_id": "femto-fcs-1"
 }

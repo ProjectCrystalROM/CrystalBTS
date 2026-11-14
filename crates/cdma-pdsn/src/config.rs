@@ -408,6 +408,11 @@ pub struct PdsnNodeConfig {
     pub events_endpoint: Option<String>,
     #[serde(default)]
     pub a12: cdma_a12::A12Config,
+    /// Serving base-station ID used to resolve an IMSI-only 1x A11 session
+    /// through the HLR registration binding. This is normally the FCS node
+    /// name (for example, `femto-fcs-1`).
+    #[serde(default)]
+    pub serving_bs_id: Option<String>,
     #[serde(default)]
     pub hlr_endpoint: Option<String>,
 }
@@ -506,6 +511,7 @@ mod tests {
             ppp_session_timeout_secs: DEFAULT_PPP_SESSION_TIMEOUT_SECS,
             events_endpoint: None,
             a12: cdma_a12::A12Config::default(),
+            serving_bs_id: None,
             hlr_endpoint: None,
         }
     }

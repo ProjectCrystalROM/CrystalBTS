@@ -363,7 +363,9 @@ fn packet_metadata_from_a11(
 
 fn a11_msid_phone_candidates(mn_id: &str) -> Vec<&str> {
     let mut candidates = vec![mn_id];
-    if mn_id.len() == 11 && mn_id.starts_with('1') {
+    // CDMA A11 MSIDs are commonly an MDN/MIN with a one-digit prefix
+    // supplied by the femto. The HLR stores the canonical 10-digit number.
+    if mn_id.len() == 11 {
         candidates.push(&mn_id[1..]);
     }
     candidates
@@ -789,10 +791,14 @@ mod tests {
     }
 
     #[test]
-    fn a11_msid_phone_candidates_try_national_number_after_leading_one() {
+    fn a11_msid_phone_candidates_try_national_number_after_prefix() {
         assert_eq!(
             a11_msid_phone_candidates("13178675309"),
             vec!["13178675309", "3178675309"]
+        );
+        assert_eq!(
+            a11_msid_phone_candidates("03178675309"),
+            vec!["03178675309", "3178675309"]
         );
         assert_eq!(a11_msid_phone_candidates("3178675309"), vec!["3178675309"]);
     }

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="773" height="196" viewBox="0 0 773 196" role="img" aria-labelledby="title">
+  <title id="title">CrystalBTS</title>
+  <defs>
+    <g id="letters" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round">
+      <!-- C -->
+      <path transform="translate(23 1) rotate(-8 33 70)" d="M61 23 Q68 25 66 32 L62 48 Q61 54 55 51 Q42 45 33 53 Q24 61 25 78 Q26 98 40 101 Q49 103 57 97 Q62 93 65 99 L70 113 Q72 120 67 123 Q54 132 35 129 Q13 126 5 108 Q-2 92 0 73 Q1 48 15 33 Q32 15 61 23Z"/>
+      <!-- r -->
+      <path transform="translate(101 4) rotate(5 14 91)" d="M2 57 Q2 52 8 52 L20 52 Q26 52 27 58 L28 65 Q35 50 48 51 Q54 51 54 58 L53 76 Q53 82 47 81 Q34 79 29 91 L29 124 Q29 129 24 129 L7 129 Q2 129 2 124Z"/>
+      <!-- y -->
+      <path transform="translate(161 2) rotate(-6 34 96)" d="M0 58 Q-2 53 4 53 L20 53 Q26 53 27 59 L36 91 L48 58 Q50 53 55 53 L71 53 Q77 53 75 59 L38 151 Q36 157 30 157 L13 156 Q6 156 9 150 L22 123Z"/>
+      <!-- s -->
+      <path transform="translate(242 1) rotate(6 28 90)" d="M53 55 Q59 57 57 63 L54 73 Q52 78 47 76 Q37 72 29 73 Q23 73 23 78 Q23 81 34 84 Q48 88 54 94 Q60 101 59 110 Q57 129 35 132 Q19 134 4 128 Q-1 126 0 120 L2 108 Q3 102 9 105 Q22 111 31 109 Q37 108 36 104 Q35 101 27 99 Q13 95 6 88 Q0 82 1 73 Q3 54 25 51 Q40 49 53 55Z"/>
+      <!-- t -->
+      <path transform="translate(307 0) rotate(-5 22 88)" d="M10 37 Q10 32 16 31 L32 29 Q38 28 38 35 L38 53 L49 53 Q55 53 55 59 L55 70 Q55 76 49 76 L38 76 L38 102 Q38 109 46 107 Q53 104 54 111 L55 120 Q56 125 50 128 Q41 132 28 131 Q10 129 10 110 L10 76 L5 76 Q0 76 0 71 L0 59 Q0 53 5 53 L10 53Z"/>
+      <!-- a -->
+      <path transform="translate(368 0) rotate(5 34 88)" d="M9 55 Q24 49 40 51 Q64 53 65 76 L65 105 Q65 110 69 110 Q73 110 73 115 L72 123 Q72 128 67 130 Q53 135 44 125 Q37 132 22 132 Q0 131 0 108 Q0 85 27 83 L40 82 L40 79 Q40 72 31 72 Q22 72 14 76 Q8 78 7 73 L4 62 Q3 57 9 55Z M40 97 L33 97 Q24 98 24 106 Q24 113 31 113 Q37 113 40 108Z"/>
+      <!-- l -->
+      <path transform="translate(448 -1) rotate(-6 15 74)" d="M4 27 Q4 21 10 21 L26 21 Q32 21 32 27 L32 106 Q32 111 37 110 Q41 109 42 114 L43 123 Q44 128 39 130 Q28 134 17 130 Q4 126 4 111Z"/>
+      <!-- B -->
+      <path transform="translate(504 0) rotate(5 36 74)" d="M1 31 Q1 24 8 24 L40 24 Q73 24 73 51 Q73 66 60 72 Q78 77 78 97 Q78 129 42 129 L8 129 Q1 129 1 122Z M29 46 L29 64 L39 64 Q48 64 48 55 Q48 46 39 46Z M29 85 L29 106 L41 106 Q52 106 52 96 Q52 85 41 85Z"/>
+      <!-- T -->
+      <path transform="translate(588 0) rotate(-6 39 73)" d="M0 30 Q0 24 6 24 L74 24 Q80 24 80 30 L80 43 Q80 50 74 50 L55 50 L55 123 Q55 129 49 129 L31 129 Q25 129 25 123 L25 50 L6 50 Q0 50 0 43Z"/>
+      <!-- S -->
+      <path transform="translate(674 0) rotate(8 37 75)" d="M67 27 Q74 30 71 37 L66 49 Q64 55 58 52 Q46 46 35 48 Q28 49 28 56 Q28 61 43 66 Q61 72 69 80 Q77 89 76 101 Q74 124 51 130 Q28 136 5 125 Q-1 122 1 116 L5 102 Q7 96 13 99 Q29 107 41 105 Q48 104 48 98 Q48 93 34 88 Q15 82 8 74 Q1 66 2 54 Q3 28 29 23 Q48 19 67 27Z"/>
+    </g>
+    <clipPath id="face" clipPathUnits="userSpaceOnUse">
+      <path transform="translate(23 1) rotate(-8 33 70)" d="M61 23 Q68 25 66 32 L62 48 Q61 54 55 51 Q42 45 33 53 Q24 61 25 78 Q26 98 40 101 Q49 103 57 97 Q62 93 65 99 L70 113 Q72 120 67 123 Q54 132 35 129 Q13 126 5 108 Q-2 92 0 73 Q1 48 15 33 Q32 15 61 23Z"/>
+      <path transform="translate(101 4) rotate(5 14 91)" d="M2 57 Q2 52 8 52 L20 52 Q26 52 27 58 L28 65 Q35 50 48 51 Q54 51 54 58 L53 76 Q53 82 47 81 Q34 79 29 91 L29 124 Q29 129 24 129 L7 129 Q2 129 2 124Z"/>
+      <path transform="translate(161 2) rotate(-6 34 96)" d="M0 58 Q-2 53 4 53 L20 53 Q26 53 27 59 L36 91 L48 58 Q50 53 55 53 L71 53 Q77 53 75 59 L38 151 Q36 157 30 157 L13 156 Q6 156 9 150 L22 123Z"/>
+      <path transform="translate(242 1) rotate(6 28 90)" d="M53 55 Q59 57 57 63 L54 73 Q52 78 47 76 Q37 72 29 73 Q23 73 23 78 Q23 81 34 84 Q48 88 54 94 Q60 101 59 110 Q57 129 35 132 Q19 134 4 128 Q-1 126 0 120 L2 108 Q3 102 9 105 Q22 111 31 109 Q37 108 36 104 Q35 101 27 99 Q13 95 6 88 Q0 82 1 73 Q3 54 25 51 Q40 49 53 55Z"/>
+      <path transform="translate(307 0) rotate(-5 22 88)" d="M10 37 Q10 32 16 31 L32 29 Q38 28 38 35 L38 53 L49 53 Q55 53 55 59 L55 70 Q55 76 49 76 L38 76 L38 102 Q38 109 46 107 Q53 104 54 111 L55 120 Q56 125 50 128 Q41 132 28 131 Q10 129 10 110 L10 76 L5 76 Q0 76 0 71 L0 59 Q0 53 5 53 L10 53Z"/>
+      <path transform="translate(368 0) rotate(5 34 88)" d="M9 55 Q24 49 40 51 Q64 53 65 76 L65 105 Q65 110 69 110 Q73 110 73 115 L72 123 Q72 128 67 130 Q53 135 44 125 Q37 132 22 132 Q0 131 0 108 Q0 85 27 83 L40 82 L40 79 Q40 72 31 72 Q22 72 14 76 Q8 78 7 73 L4 62 Q3 57 9 55Z M40 97 L33 97 Q24 98 24 106 Q24 113 31 113 Q37 113 40 108Z"/>
+      <path transform="translate(448 -1) rotate(-6 15 74)" d="M4 27 Q4 21 10 21 L26 21 Q32 21 32 27 L32 106 Q32 111 37 110 Q41 109 42 114 L43 123 Q44 128 39 130 Q28 134 17 130 Q4 126 4 111Z"/>
+      <path transform="translate(504 0) rotate(5 36 74)" d="M1 31 Q1 24 8 24 L40 24 Q73 24 73 51 Q73 66 60 72 Q78 77 78 97 Q78 129 42 129 L8 129 Q1 129 1 122Z M29 46 L29 64 L39 64 Q48 64 48 55 Q48 46 39 46Z M29 85 L29 106 L41 106 Q52 106 52 96 Q52 85 41 85Z"/>
+      <path transform="translate(588 0) rotate(-6 39 73)" d="M0 30 Q0 24 6 24 L74 24 Q80 24 80 30 L80 43 Q80 50 74 50 L55 50 L55 123 Q55 129 49 129 L31 129 Q25 129 25 123 L25 50 L6 50 Q0 50 0 43Z"/>
+      <path transform="translate(674 0) rotate(8 37 75)" d="M67 27 Q74 30 71 37 L66 49 Q64 55 58 52 Q46 46 35 48 Q28 49 28 56 Q28 61 43 66 Q61 72 69 80 Q77 89 76 101 Q74 124 51 130 Q28 136 5 125 Q-1 122 1 116 L5 102 Q7 96 13 99 Q29 107 41 105 Q48 104 48 98 Q48 93 34 88 Q15 82 8 74 Q1 66 2 54 Q3 28 29 23 Q48 19 67 27Z"/>
+    </clipPath>
+    <mask id="extrusion" x="0" y="0" width="773" height="196" maskUnits="userSpaceOnUse">
+      <use xlink:href="#letters" transform="translate(0 13)" fill="white" stroke="white" stroke-width="24"/>
+    </mask>
+    <linearGradient id="edge" x1="0" y1="0" x2="773" y2="165" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#80b450"/>
+      <stop offset=".34" stop-color="#78a34f"/>
+      <stop offset=".69" stop-color="#8754b0"/>
+      <stop offset="1" stop-color="#64379a"/>
+    </linearGradient>
+  </defs>
+  <rect width="773" height="196" fill="url(#edge)" mask="url(#extrusion)"/>
+  <use xlink:href="#letters" fill="#fff" stroke="#fff" stroke-width="24"/>
+  <use xlink:href="#letters" fill="#9961cb"/>
+  <path d="M0 67 C139 93 206 110 307 93 S476 69 570 79 S717 94 773 110 V196 H0Z" fill="#a8e669" clip-path="url(#face)"/>
+</svg>

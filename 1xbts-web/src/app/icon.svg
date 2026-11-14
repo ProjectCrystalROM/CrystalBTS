@@ -1,41 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0c0e14"/>
-      <stop offset="100%" style="stop-color:#0f1219"/>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#17152b"/>
+      <stop offset="1" stop-color="#342449"/>
     </linearGradient>
-    <linearGradient id="brand" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1"/>
-      <stop offset="100%" style="stop-color:#10b981"/>
-    </linearGradient>
-    <linearGradient id="tower" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#818cf8"/>
-      <stop offset="100%" style="stop-color:#34d399"/>
+    <linearGradient id="signal" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#c8f56b"/>
+      <stop offset="1" stop-color="#b86fe0"/>
     </linearGradient>
   </defs>
-  <!-- Background -->
-  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
-  <!-- Subtle glow -->
-  <circle cx="32" cy="28" r="20" fill="url(#brand)" opacity="0.06"/>
-  <!-- Radio waves (outer) -->
-  <path d="M 10 22 A 22 22 0 0 1 22 10" fill="none" stroke="url(#brand)" stroke-width="2.5" stroke-linecap="round" opacity="0.25"/>
-  <path d="M 42 10 A 22 22 0 0 1 54 22" fill="none" stroke="url(#brand)" stroke-width="2.5" stroke-linecap="round" opacity="0.25"/>
-  <!-- Radio waves (middle) -->
-  <path d="M 16 24 A 14 14 0 0 1 24 16" fill="none" stroke="url(#brand)" stroke-width="2.5" stroke-linecap="round" opacity="0.45"/>
-  <path d="M 40 16 A 14 14 0 0 1 48 24" fill="none" stroke="url(#brand)" stroke-width="2.5" stroke-linecap="round" opacity="0.45"/>
-  <!-- Radio waves (inner) -->
-  <path d="M 22 26 A 7 7 0 0 1 26 22" fill="none" stroke="url(#brand)" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
-  <path d="M 38 22 A 7 7 0 0 1 42 26" fill="none" stroke="url(#brand)" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
-  <!-- Tower antenna tip -->
-  <circle cx="32" cy="20" r="2.5" fill="#818cf8"/>
-  <!-- Tower body -->
-  <line x1="32" y1="22" x2="32" y2="36" stroke="url(#tower)" stroke-width="3" stroke-linecap="round"/>
-  <!-- Tower base / spread legs -->
-  <line x1="32" y1="36" x2="24" y2="54" stroke="url(#tower)" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="32" y1="36" x2="40" y2="54" stroke="url(#tower)" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- Cross struts -->
-  <line x1="27" y1="42" x2="37" y2="42" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
-  <line x1="25.5" y1="48" x2="38.5" y2="48" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
-  <!-- Ground line -->
-  <line x1="20" y1="54" x2="44" y2="54" stroke="#34d399" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+  <rect width="64" height="64" rx="14" fill="url(#background)"/>
+  <!-- Cat ears and head -->
+  <path d="M12 28 15 10l11 10h12l11-10 3 18v17c0 8-8 13-20 13S12 53 12 45z" fill="#4a355d"/>
+  <path d="m17 15 2 9 6-4m22-5-2 9-6-4" fill="#c8f56b"/>
+  <!-- Sleepy eyes and tiny nose -->
+  <path d="M21 35c2 3 5 3 7 0m8 0c2 3 5 3 7 0" fill="none" stroke="#fff6e6" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M29 43l3 2 3-2-3-2z" fill="#8be3ff"/>
+  <path d="M32 45v4m-8-3 5 2m6 0 5-2" stroke="#fff6e6" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Radio-wave whiskers -->
+  <path d="M10 27c-4-4-4-9 0-13m44 13c4-4 4-9 0-13" fill="none" stroke="url(#signal)" stroke-width="3" stroke-linecap="round"/>
 </svg>

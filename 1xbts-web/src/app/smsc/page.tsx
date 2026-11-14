@@ -348,7 +348,7 @@ export default function SmscPage() {
 
   return (
     <div className="page-container space-y-4">
-      <h1 className="text-lg font-bold">SMSC</h1>
+      <h1 className="text-lg font-bold">Texts &amp; MMS</h1>
       <SendSmsForm onSent={() => setRefreshKey((k) => k + 1)} />
       <SmsHistoryTable key={refreshKey} />
     </div>

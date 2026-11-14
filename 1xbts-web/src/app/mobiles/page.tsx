@@ -24,7 +24,7 @@ export default function MobilesPage() {
   return (
     <div className="page-container space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold">Mobile Stations</h1>
+        <h1 className="text-lg font-bold">Pocket pals</h1>
         {policy && (
           <span
             className={`text-xs px-2 py-0.5 rounded ${
@@ -36,7 +36,7 @@ export default function MobilesPage() {
         )}
       </div>
 
-      <Card title={`Registered Mobiles (${mobiles.length})`}>
+      <Card title={`Registered pocket pals (${mobiles.length})`}>
         {loading ? (
           <p className="text-dimmed text-sm">Loading...</p>
         ) : error ? (

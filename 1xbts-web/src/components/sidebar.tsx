@@ -7,17 +7,16 @@ import { useConnectionState } from "@/lib/use-event-stream";
 import { useBaseStations } from "@/lib/use-base-stations";
 
 const links = [
-  { href: "/", label: "Dashboard" },
-  { href: "/bts", label: "Cells" },
-  { href: "/base-stations", label: "Base Stations" },
-  { href: "/messages", label: "Messages" },
-  { href: "/channels", label: "Channels" },
-  { href: "/mobiles", label: "Mobiles" },
-  { href: "/subscribers", label: "Subscribers" },
-  { href: "/prls", label: "PRLs" },
-  { href: "/smsc", label: "SMSC" },
-  { href: "/packets", label: "Packets" },
-  { href: "/evdo", label: "EV-DO Sessions" },
+  { href: "/", label: "Dashboard", icon: "✦" },
+  { href: "/bts", label: "Cells", icon: "◌" },
+  { href: "/base-stations", label: "Base stations", icon: "⌁" },
+  { href: "/messages", label: "Radio chatter", icon: "〰" },
+  { href: "/mobiles", label: "Pocket pals", icon: "♡" },
+  { href: "/subscribers", label: "Kittens", icon: "⊹" },
+  { href: "/prls", label: "Wander maps", icon: "◆" },
+  { href: "/smsc", label: "Texts & MMS", icon: "✉" },
+  { href: "/packets", label: "Packet data", icon: "↓" },
+  { href: "/evdo", label: "EV-DO", icon: "⚡" },
 ];
 
 type Theme = "dark" | "light";
@@ -61,7 +60,7 @@ function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[13px] font-medium text-muted hover:text-primary hover:bg-hover transition-colors"
+      className="flex items-center gap-2 w-full px-3 py-2 rounded-[14px_10px_14px_11px] text-[13px] font-medium text-muted hover:text-primary hover:bg-hover transition-colors"
       title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
     >
       {theme === "dark" ? (
@@ -79,14 +78,13 @@ function ThemeToggle() {
 }
 
 function BrandLogo() {
-  const theme = useSidebarTheme();
   return (
     <div className="px-4 pt-5 pb-4">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={theme === "light" ? "/logo.svg" : "/logo-dark.svg"}
-        alt="1xBTS"
-        className="h-16 w-auto"
+        src="/crystalbts-sharkey.svg"
+        alt="CrystalBTS"
+        className="h-auto w-full max-w-[188px]"
       />
     </div>
   );
@@ -108,7 +106,7 @@ export function Sidebar() {
 
 
       {/* Nav links */}
-      <nav className="flex-1 px-2 flex flex-col gap-0.5">
+      <nav className="flex-1 px-2 flex flex-col gap-1">
         {links.map((link) => {
           const active =
             link.href === "/"
@@ -118,17 +116,20 @@ export function Sidebar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-2.5 text-[13px] font-medium px-3 py-2 rounded-lg transition-colors ${
+              className={`flex items-center gap-2.5 text-[13px] font-medium px-3 py-2 rounded-[14px_10px_15px_11px] transition-colors ${
                 active
-                  ? "bg-active text-primary font-semibold"
+                  ? "bg-active text-primary font-semibold shadow-[2px_3px_0_var(--border-primary)] -rotate-[0.3deg]"
                   : "text-muted hover:text-primary hover:bg-hover"
               }`}
             >
               <span
-                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                  active ? "bg-accent-indigo shadow-[0_0_6px_var(--accent-indigo)]" : "bg-dimmed"
+                aria-hidden="true"
+                className={`grid h-5 w-5 shrink-0 place-items-center rounded-[8px_6px_8px_6px] text-xs leading-none transition-colors ${
+                  active ? "bg-accent-indigo text-white shadow-[1px_2px_0_var(--border-primary)]" : "bg-surface-raised text-dimmed"
                 }`}
-              />
+              >
+                {link.icon}
+              </span>
               {link.label}
             </Link>
           );
@@ -136,7 +137,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-2 py-3 border-t border-border space-y-1">
+      <div className="px-2 py-3 border-t-2 border-border space-y-1">
         <div className="px-2">
           <div className={`flex items-center gap-1.5 text-xs font-medium ${online ? "text-primary" : offline ? "text-accent-red" : "text-muted"}`}>
             <span

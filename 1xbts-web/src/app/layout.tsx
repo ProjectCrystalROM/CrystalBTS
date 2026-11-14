@@ -17,8 +17,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "1xBTS Dashboard",
-  description: "1xBTS monitoring and control",
+  title: "CrystalBTS Dashboard",
+  description: "CrystalBTS monitoring and control",
 };
 
 export default function RootLayout({

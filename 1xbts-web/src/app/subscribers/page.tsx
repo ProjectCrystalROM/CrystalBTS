@@ -248,17 +248,17 @@ export default function SubscribersPage() {
   return (
     <div className="page-container space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold">Subscribers</h1>
+        <h1 className="text-lg font-bold">Kittens</h1>
         <button
           onClick={() => setShowForm(!showForm)}
           className="text-xs px-3 py-1.5 rounded bg-accent-green-bg text-accent-green border border-accent-green/20 hover:bg-accent-green/15 transition-colors"
         >
-          {showForm ? "Cancel" : "Add Subscriber"}
+          {showForm ? "Cancel" : "Add kitten"}
         </button>
       </div>
 
       {showForm && (
-        <Card title="New Subscriber">
+        <Card title="New kitten">
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -461,13 +461,13 @@ export default function SubscribersPage() {
               disabled={submitting}
               className="text-xs px-4 py-1.5 rounded bg-accent-green-bg text-accent-green border border-accent-green/20 hover:bg-accent-green/15 disabled:opacity-50 transition-colors"
             >
-              {submitting ? "Creating..." : "Create Subscriber"}
+              {submitting ? "Creating..." : "Create kitten"}
             </button>
           </form>
         </Card>
       )}
 
-      <Card title={`Provisioned Subscribers (${subscribers.length})`}>
+      <Card title={`Provisioned kittens (${subscribers.length})`}>
         <ErrorNotice error={deleteError} className="mb-3" />
         {loading ? (
           <p className="text-dimmed text-sm">Loading...</p>
@@ -475,7 +475,7 @@ export default function SubscribersPage() {
           <ErrorNotice error={listError} />
         ) : subscribers.length === 0 ? (
           <p className="text-dimmed text-sm">
-            No subscribers provisioned. Click &quot;Add Subscriber&quot; to create one.
+            No kittens provisioned. Click &quot;Add kitten&quot; to create one.
           </p>
         ) : (
           <div className="overflow-x-auto">

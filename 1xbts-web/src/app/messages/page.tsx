@@ -359,7 +359,7 @@ export default function MessagesPage() {
   return (
     <div className="page-container space-y-4">
       <div className="flex items-center gap-4 flex-wrap">
-        <h1 className="text-lg font-bold">Message Log</h1>
+        <h1 className="text-lg font-bold">Radio chatter</h1>
         <div className="flex gap-1 ml-auto">
           {(["all", "1x-tx", "1x-rx", "evdo-tx", "evdo-rx", "a1"] as const).map((f) => (
             <button

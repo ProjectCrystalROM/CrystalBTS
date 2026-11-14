@@ -81,12 +81,12 @@ export default function PrlsPage() {
   return (
     <div className="page-container space-y-4">
       <div className="flex items-baseline gap-3">
-        <h1 className="text-primary text-lg font-medium">PRLs</h1>
+        <h1 className="text-primary text-lg font-medium">Wander maps</h1>
         <Link
           href="/prls/new"
           className="ml-auto text-accent-blue text-xs hover:underline"
         >
-          + New PRL
+          + New wander map
         </Link>
       </div>
 
@@ -97,7 +97,7 @@ export default function PrlsPage() {
           <p className="text-dimmed text-xs">Loading…</p>
         ) : prls.length === 0 ? (
           <p className="text-dimmed text-xs">
-            No PRLs yet. Upload a .prl file to get started.
+            No wander maps yet. Upload a .prl file to get started.
           </p>
         ) : (
           <table className="data-table">

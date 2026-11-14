@@ -239,12 +239,15 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-semibold">Dashboard</h1>
+            <div>
+              <h1 className="text-xl font-semibold">Hello, operator ✦</h1>
+              <p className="mt-0.5 text-xs text-muted">Your little radio kingdom is humming along.</p>
+            </div>
             {problems.length === 0 ? (
-              <span className="text-xs px-2 py-0.5 rounded bg-badge-green-bg text-badge-green-text">All systems normal</span>
+              <span className="status-summary bg-badge-green-bg text-badge-green-text">All systems normal</span>
             ) : (
               <span
-                className="text-xs px-2 py-0.5 rounded bg-badge-yellow-bg text-badge-yellow-text"
+                className="status-summary bg-badge-yellow-bg text-badge-yellow-text"
                 title={problems.join("\n")}
               >
                 Degraded · {problems[0]}
@@ -253,7 +256,7 @@ export default function DashboardPage() {
             )}
             {policy && (
               <span
-                className={`text-xs px-2 py-0.5 rounded ${
+                className={`status-summary ${
                   closed ? "bg-badge-red-bg text-badge-red-text" : "bg-surface-raised text-secondary"
                 }`}
               >
@@ -261,11 +264,11 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted" aria-label="Core service status">
             {(["msc", "hlr", "smsc"] as const).map((c) => (
-              <span key={c} className="inline-flex items-center gap-1.5">
+              <span key={c} className="status-chip" title={core == null ? `${c.toUpperCase()} status is loading` : core[c] ? `${c.toUpperCase()} is available` : `${c.toUpperCase()} is unavailable`}>
                 <span
-                  className={`inline-block w-2 h-2 rounded-full ${
+                  className={`status-chip-dot ${
                     core == null ? "bg-signal-bar-off" : core[c] ? "bg-accent-green" : "bg-accent-red"
                   }`}
                 />
@@ -273,12 +276,12 @@ export default function DashboardPage() {
               </span>
             ))}
             {sid != null && (
-              <span className="font-mono">
+              <span className="status-identifiers font-mono">
                 SID {sid} · NID {nid}
               </span>
             )}
             {Number.isFinite(worstTx) && (
-              <span className="font-mono" title="Worst real-time ratio across cells">
+              <span className="status-identifiers font-mono" title="Worst real-time ratio across cells">
                 RT {worstTx.toFixed(2)}x TX · {Number.isFinite(worstRx) ? worstRx.toFixed(2) : "-"}x RX
               </span>
             )}
@@ -293,18 +296,22 @@ export default function DashboardPage() {
           unit={`/ ${networkCells.length}`}
           detail={
             networkCells.length === inServiceCells.length
-              ? "in service"
+              ? "all cozy"
               : `${networkCells.length - inServiceCells.length} out of service`
           }
           detailClass={networkCells.length === inServiceCells.length ? "text-accent-green" : "text-accent-amber"}
         />
-        <SummaryTile label="Active calls" value={String(calls.length)}>
+        <SummaryTile
+          label="Active calls"
+          value={String(calls.length)}
+          detail={calls.length === 0 ? "quiet airwaves" : "on the air"}
+        >
           <CountSparkline values={callHistory.counts} />
         </SummaryTile>
         <SummaryTile
-          label="Mobiles"
+          label="Pocket pals"
           value={String(mobiles.length)}
-          detail={`${onVoice} on traffic · ${onData} data · ${mobiles.length - onVoice - onData} idle`}
+          detail={`${onVoice} chatting · ${onData} on data · ${mobiles.length - onVoice - onData} idling`}
         />
         <SummaryTile
           label="Reverse FER"
@@ -316,18 +323,18 @@ export default function DashboardPage() {
         <SummaryTile
           label="SMS today"
           value={String(smsDelivered)}
-          detail={smsPending > 0 ? `delivered · ${smsPending} pending` : "delivered"}
+          detail={smsPending > 0 ? `made it home · ${smsPending} waiting` : "made it home"}
           detailClass={smsPending > 0 ? "text-accent-amber" : undefined}
         />
         <SummaryTile
           label="Data sessions"
           value={String(activeSessions.length)}
-          detail={activeSessions.length > 0 ? `${formatBytes(sessionBytes)} transferred` : "none active"}
+          detail={activeSessions.length > 0 ? `${formatBytes(sessionBytes)} on the move` : "taking a nap"}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card title="Network" action={<Link href="/base-stations" className="text-xs text-accent-green">Base stations &rarr;</Link>}>
+        <Card title="Network nest" action={<Link href="/base-stations" className="text-xs text-accent-green">Base stations &rarr;</Link>}>
           {nodes.length === 0 ? (
             <p className="text-dimmed text-sm">Unavailable</p>
           ) : (
@@ -348,7 +355,7 @@ export default function DashboardPage() {
       </div>
 
       <Card
-        title={`Mobiles (${mobiles.length})`}
+        title={`Pocket pals (${mobiles.length})`}
         action={<span className="text-[11px] text-muted">by last heard</span>}
       >
         {mobiles.length === 0 ? (

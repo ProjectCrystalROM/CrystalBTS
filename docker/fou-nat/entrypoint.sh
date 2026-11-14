@@ -156,6 +156,42 @@ fi
 mkdir -p /run/nginx /var/log/nginx /etc/nginx/conf.d /etc/unbound
 rm -f /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf 2>/dev/null || true
 
+# A number of legacy Verizon CDMA handsets advertise this long-retired
+# UAProf URL with their M-Send request.  The captive DNS redirects the vtext
+# MMSC zone here, so serving a local profile prevents Mbuni from recursively
+# fetching its own MMS error response and trying to parse it as XML.
+mkdir -p /usr/share/nginx/html/uaprof
+cat >/usr/share/nginx/html/uaprof/vn251.xml <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns="http://www.wapforum.org/profiles/UAPROF/ccppschema-20010426#">
+  <rdf:Description rdf:ID="VN251">
+    <Vendor>Samsung</Vendor>
+    <Model>VN251</Model>
+    <CcppAccept>application/vnd.wap.mms-message,application/vnd.wap.multipart.related</CcppAccept>
+    <MmsCcppAccept>application/vnd.wap.mms-message</MmsCcppAccept>
+    <MmsVersion>1.0</MmsVersion>
+    <MmsMaxMessageSize>102400</MmsMaxMessageSize>
+    <ScreenSize>240x320</ScreenSize>
+  </rdf:Description>
+</rdf:RDF>
+EOF
+
+cat >/etc/nginx/conf.d/uaprof.conf <<'EOF'
+server {
+    listen 80;
+    server_name uaprof.vtext.com;
+
+    location = /lg/vn251/vn251.xml {
+        alias /usr/share/nginx/html/uaprof/vn251.xml;
+        default_type application/xml;
+        add_header Cache-Control "public, max-age=86400";
+    }
+
+    location / { return 404; }
+}
+EOF
+
 # MMSC reverse-proxy: nginx fetches the authoritative MSISDN for
 # $remote_addr from the edge-resolver via auth_request, then sets
 # X-1xBTS-MSISDN on the outbound request before handing off to

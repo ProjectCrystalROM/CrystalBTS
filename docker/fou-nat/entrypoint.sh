@@ -161,18 +161,18 @@ rm -f /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf 2>/dev/nul
 # MMSC zone here, so serving a local profile prevents Mbuni from recursively
 # fetching its own MMS error response and trying to parse it as XML.
 mkdir -p /usr/share/nginx/html/uaprof
-cat >/usr/share/nginx/html/uaprof/vn251.xml <<'EOF'
+cat >/usr/share/nginx/html/uaprof/fallback.xml <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
          xmlns="http://www.wapforum.org/profiles/UAPROF/ccppschema-20010426#">
-  <rdf:Description rdf:ID="VN251">
-    <Vendor>Samsung</Vendor>
-    <Model>VN251</Model>
+  <rdf:Description rdf:ID="CrystalBTS-MMS-Compatibility">
+    <Vendor>ProjectCrystalROM</Vendor>
+    <Model>CrystalBTS MMS Compatibility Profile</Model>
     <CcppAccept>application/vnd.wap.mms-message,application/vnd.wap.multipart.related</CcppAccept>
     <MmsCcppAccept>application/vnd.wap.mms-message</MmsCcppAccept>
     <MmsVersion>1.0</MmsVersion>
-    <MmsMaxMessageSize>102400</MmsMaxMessageSize>
-    <ScreenSize>240x320</ScreenSize>
+    <MmsMaxMessageSize>1048576</MmsMaxMessageSize>
+    <ScreenSize>640x480</ScreenSize>
   </rdf:Description>
 </rdf:RDF>
 EOF
@@ -180,15 +180,17 @@ EOF
 cat >/etc/nginx/conf.d/uaprof.conf <<'EOF'
 server {
     listen 80;
-    server_name uaprof.vtext.com;
+    server_name uaprof.vtext.com uaprof.mobile.att.net uaprof.sprintpcs.com device.sprintpcs.com uaprof.tmobile.com uaprof.uscc.net;
 
-    location = /lg/vn251/vn251.xml {
-        alias /usr/share/nginx/html/uaprof/vn251.xml;
+    # Mbuni asks for legacy vendor-specific paths. Content adaptation is
+    # disabled, so this only needs to be valid and local; one compatibility
+    # profile avoids maintaining stale per-handset carrier XML files.
+    location / {
+        try_files /fallback.xml =404;
+        root /usr/share/nginx/html/uaprof;
         default_type application/xml;
         add_header Cache-Control "public, max-age=86400";
     }
-
-    location / { return 404; }
 }
 EOF
 

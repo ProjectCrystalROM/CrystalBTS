@@ -48,5 +48,8 @@
     "validate_subscribers": false
   },
   "hlr_endpoint": "http://127.0.0.1:17019",
-  "serving_bs_id": "femto-fcs-1"
+  "serving_bs_id": "femto-fcs-1",
+  "a11_msid_aliases": {
+    "000000995720655": "611"
+  }
 }

@@ -106,6 +106,17 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          # Mbuni resolves these retired carrier UAProf hosts through Docker's
+          # embedded DNS and fetches the local compatibility profile below.
+          - uaprof.vtext.com
+          - uaprof.mobile.att.net
+          - uaprof.sprintpcs.com
+          - device.sprintpcs.com
+          - uaprof.tmobile.com
+          - uaprof.uscc.net
 
   # The carrier portal needs the packet gateway's tunnel address, so it shares
   # the fou-nat network namespace.  Keeping it as a Compose service makes its

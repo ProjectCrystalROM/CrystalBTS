@@ -21,24 +21,20 @@ mkdir -p /var/spool/mbuni
 envsubst < "${TEMPLATE}" > "${CONF}"
 
 # Mbuni fetches every handset's UAProf XML synchronously before answering
-# M-Retrieve.conf, even with content-adaptation disabled. The well-known
-# carrier UAProf hosts (e.g. uaprof.vtext.com) are out on the public
-# internet and frequently take 60-90s to fail, which makes MMS retrieval
-# look hung. Blackhole the common ones to an otherwise-unbound loopback
-# address so connect() fails immediately and Mbuni falls back to building a
-# profile from request
-# headers. Override with UAPROF_BLACKHOLE_HOSTS=host1,host2 (empty to
-# disable).
-UAPROF_BLACKHOLE_HOSTS="${UAPROF_BLACKHOLE_HOSTS:-uaprof.vtext.com,uaprof.mobile.att.net,uaprof.sprintpcs.com,uaprof.tmobile.com,uaprof.uscc.net,device.sprintpcs.com}"
+# M-Retrieve.conf, even with content-adaptation disabled. The common carrier
+# UAProf names are Compose aliases for fou-nat, which serves our local
+# compatibility profile. Do not map them to a loopback address: Mbuni binds
+# its MM1 listener on every local address, so any 127/8 mapping recurses into
+# the MMSC and hands the XML parser a binary MMS error response.
+#
+# This override is intentionally opt-in for troubleshooting only; normal
+# operation must use the Compose-network aliases above.
+UAPROF_BLACKHOLE_HOSTS="${UAPROF_BLACKHOLE_HOSTS:-}"
 if [ -n "${UAPROF_BLACKHOLE_HOSTS}" ]; then
     for h in $(printf '%s\n' "${UAPROF_BLACKHOLE_HOSTS}" | tr ',' ' '); do
         [ -z "$h" ] && continue
         grep -qE "[[:space:]]${h}([[:space:]]|\$)" /etc/hosts || \
-            # 127.0.0.1 is Mbuni's own MM1 HTTP listener. Mapping a UAProf
-            # host there makes the fetch loop back into the MMSC, returning a
-            # binary MMS error PDU where the XML parser expects a UA profile.
-            # 127.0.0.2 remains loopback but has no HTTP listener.
-            echo "127.0.0.2 ${h}" >>/etc/hosts
+            echo "192.0.2.1 ${h}" >>/etc/hosts
     done
 fi
 

@@ -413,6 +413,12 @@ pub struct PdsnNodeConfig {
     /// name (for example, `femto-fcs-1`).
     #[serde(default)]
     pub serving_bs_id: Option<String>,
+    /// Optional mapping from the MN ID carried by a legacy A11 peer to the
+    /// subscriber phone number stored in the HLR. This supports service
+    /// short-codes when a femto presents the handset's programmed MIN rather
+    /// than its IMSI or assigned dialable number.
+    #[serde(default)]
+    pub a11_msid_aliases: std::collections::BTreeMap<String, String>,
     #[serde(default)]
     pub hlr_endpoint: Option<String>,
 }
@@ -512,6 +518,7 @@ mod tests {
             events_endpoint: None,
             a12: cdma_a12::A12Config::default(),
             serving_bs_id: None,
+            a11_msid_aliases: std::collections::BTreeMap::new(),
             hlr_endpoint: None,
         }
     }

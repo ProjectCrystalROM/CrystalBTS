@@ -361,8 +361,14 @@ fn packet_metadata_from_a11(
     }
 }
 
-fn a11_msid_phone_candidates(mn_id: &str) -> Vec<&str> {
-    let mut candidates = vec![mn_id];
+fn a11_msid_phone_candidates<'a>(
+    mn_id: &'a str,
+    aliases: &'a std::collections::BTreeMap<String, String>,
+) -> Vec<&'a str> {
+    let mut candidates = aliases
+        .get(mn_id)
+        .map(|alias| vec![alias.as_str()])
+        .unwrap_or_else(|| vec![mn_id]);
     // CDMA A11 MSIDs are commonly an MDN/MIN with a one-digit prefix
     // supplied by the femto. The HLR stores the canonical 10-digit number.
     if mn_id.len() == 11 {
@@ -682,7 +688,9 @@ pub(crate) async fn spawn_pdsn_a11_service_with_hlr(
                 }
             } else {
                 if let (Some(hlr), Some(mn_id)) = (hlr.as_deref(), metadata.mn_id.as_deref()) {
-                    for phone_number in a11_msid_phone_candidates(mn_id) {
+                    for phone_number in
+                        a11_msid_phone_candidates(mn_id, &pdsn_config.a11_msid_aliases)
+                    {
                         match hlr.get_subscriber_by_phone_number(phone_number).await {
                             Ok(Some(resolved)) => {
                                 apply_hlr_subscriber(&mut metadata, resolved);
@@ -792,15 +800,29 @@ mod tests {
 
     #[test]
     fn a11_msid_phone_candidates_try_national_number_after_prefix() {
+        let aliases = std::collections::BTreeMap::new();
         assert_eq!(
-            a11_msid_phone_candidates("13178675309"),
+            a11_msid_phone_candidates("13178675309", &aliases),
             vec!["13178675309", "3178675309"]
         );
         assert_eq!(
-            a11_msid_phone_candidates("03178675309"),
+            a11_msid_phone_candidates("03178675309", &aliases),
             vec!["03178675309", "3178675309"]
         );
-        assert_eq!(a11_msid_phone_candidates("3178675309"), vec!["3178675309"]);
+        assert_eq!(
+            a11_msid_phone_candidates("3178675309", &aliases),
+            vec!["3178675309"]
+        );
+    }
+
+    #[test]
+    fn a11_msid_alias_prefers_the_assigned_short_code() {
+        let aliases =
+            std::collections::BTreeMap::from([("000000995720655".to_string(), "611".to_string())]);
+        assert_eq!(
+            a11_msid_phone_candidates("000000995720655", &aliases),
+            vec!["611"]
+        );
     }
 
     #[test]

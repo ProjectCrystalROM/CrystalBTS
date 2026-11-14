@@ -327,7 +327,8 @@ fn packet_metadata_from_a11(
             Ok(id) if access_technology == "1x" && id.len() == 15 => (Some(id.clone()), Some(id)),
             Ok(id) => (None, Some(id)),
             Err(_) => match a11_msid_tbcd_to_imsi(&request.session.mn_id) {
-                Ok(id) => (Some(id.clone()), Some(id)),
+                Ok(id) if id.len() == 15 => (Some(id.clone()), Some(id)),
+                Ok(id) => (None, Some(id)),
                 Err(err) => {
                     warn!(
                         "PDSN A11: failed to decode IMSI MSID: {err} type={} mn_id={}",
@@ -677,12 +678,15 @@ pub(crate) async fn spawn_pdsn_a11_service_with_hlr(
                         "PDSN A11: HLR registration lookup failed for session {key:?} on {serving_bs_id}: {error}"
                     ),
                 }
-            } else if metadata.access_technology == "1x" {
+            } else {
                 if let (Some(hlr), Some(mn_id)) = (hlr.as_deref(), metadata.mn_id.as_deref()) {
                     for phone_number in a11_msid_phone_candidates(mn_id) {
                         match hlr.get_subscriber_by_phone_number(phone_number).await {
                             Ok(Some(resolved)) => {
                                 apply_hlr_subscriber(&mut metadata, resolved);
+                                info!(
+                                    "PDSN A11: resolved MSID session {key:?} to a provisioned subscriber"
+                                );
                                 break;
                             }
                             Ok(None) => continue,

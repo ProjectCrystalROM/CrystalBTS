@@ -2101,6 +2101,17 @@ impl ImsCore {
             .cloned()
     }
 
+    /// Return the Fx2 route only when it is unambiguous.  This lets a single
+    /// Airave resume downlink service immediately after the FCS restarts: ACS
+    /// can restore its authenticated route before the handsets have sent a
+    /// new uplink message to rebuild their per-mobile bindings.
+    fn sole_registered_fap(&self) -> Option<RegisteredFap> {
+        let registered = self.registered_faps.lock().expect("registered FAPs lock");
+        let mut routes = registered.values();
+        let route = routes.next()?.clone();
+        routes.next().is_none().then_some(route)
+    }
+
     /// The configured FAP a message came from, by transport peer then SIP
     /// identity. `None` means no configured FAP. Callers must not invent one.
     fn source_fap(&self, request: &SipRequest, peer: Option<SocketAddr>) -> Option<String> {
@@ -2150,8 +2161,10 @@ impl ImsCore {
     ) -> Result<(SipRequest, SocketAddr, String, PendingDownlink), crate::fcs::FcsError> {
         let identity = self.downlink_mobile_identity(encoded)?;
         // Route by the call binding first, then by mobile identity for a
-        // connectionless page. Do not fall back to the only registered FAP. It
-        // misroutes once more than one FAP is registered.
+        // connectionless page.  A single ACS-recovered FAP is also safe: it
+        // is the only possible destination until handsets refresh their
+        // bindings after an FCS restart.  Never apply that fallback with
+        // multiple registered FAPs.
         let route = encoded
             .call_id()
             .and_then(|call_id| self.route_for_call(call_id))
@@ -2160,6 +2173,7 @@ impl ImsCore {
                     .as_deref()
                     .and_then(|identity| self.route_for_mobile(identity))
             })
+            .or_else(|| self.sole_registered_fap())
             .ok_or(crate::fcs::FcsError::NoRegisteredFap)?;
         // Pin the leg so later identity-less downlinks route to the same FAP.
         // or_insert keeps an authoritative uplink binding if one exists.

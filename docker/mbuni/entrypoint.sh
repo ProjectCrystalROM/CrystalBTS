@@ -24,8 +24,9 @@ envsubst < "${TEMPLATE}" > "${CONF}"
 # M-Retrieve.conf, even with content-adaptation disabled. The well-known
 # carrier UAProf hosts (e.g. uaprof.vtext.com) are out on the public
 # internet and frequently take 60-90s to fail, which makes MMS retrieval
-# look hung. Blackhole the common ones to 127.0.0.1 so connect() fails
-# immediately and Mbuni falls back to building a profile from request
+# look hung. Blackhole the common ones to an otherwise-unbound loopback
+# address so connect() fails immediately and Mbuni falls back to building a
+# profile from request
 # headers. Override with UAPROF_BLACKHOLE_HOSTS=host1,host2 (empty to
 # disable).
 UAPROF_BLACKHOLE_HOSTS="${UAPROF_BLACKHOLE_HOSTS:-uaprof.vtext.com,uaprof.mobile.att.net,uaprof.sprintpcs.com,uaprof.tmobile.com,uaprof.uscc.net,device.sprintpcs.com}"
@@ -33,7 +34,11 @@ if [ -n "${UAPROF_BLACKHOLE_HOSTS}" ]; then
     for h in $(printf '%s\n' "${UAPROF_BLACKHOLE_HOSTS}" | tr ',' ' '); do
         [ -z "$h" ] && continue
         grep -qE "[[:space:]]${h}([[:space:]]|\$)" /etc/hosts || \
-            echo "127.0.0.1 ${h}" >>/etc/hosts
+            # 127.0.0.1 is Mbuni's own MM1 HTTP listener. Mapping a UAProf
+            # host there makes the fetch loop back into the MMSC, returning a
+            # binary MMS error PDU where the XML parser expects a UA profile.
+            # 127.0.0.2 remains loopback but has no HTTP listener.
+            echo "127.0.0.2 ${h}" >>/etc/hosts
     done
 fi
 

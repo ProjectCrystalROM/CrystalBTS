@@ -2700,6 +2700,8 @@ mod tests {
             ppp_session_timeout_secs: 1_800,
             events_endpoint: None,
             a12: Default::default(),
+            serving_bs_id: None,
+            a11_msid_aliases: Default::default(),
             hlr_endpoint: None,
         };
         let packet_service = cdma_pdsn::build_packet_service_with_sink(&pdsn_config, None).unwrap();

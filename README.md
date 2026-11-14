@@ -5,10 +5,10 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](Cargo.toml)
 
-CrystalBTS is an experimental CDMA2000 1x and HRPD (1xEV-DO) radio-access and
-core-network stack implemented primarily in Rust. It includes BTS, BSC, HRPD
-AN, MSC, HLR, SMSC, packet data, voice, SDR radio backends, and a web dashboard
-for development and operation.
+CrystalBTS is a playful, experimental CDMA2000 1x and HRPD (1xEV-DO)
+radio-access and core-network stack implemented primarily in Rust. It includes
+BTS, BSC, HRPD AN, MSC, HLR, SMSC, packet data, voice, SDR radio backends, and
+a dashboard for keeping an eye on your little radio kingdom.
 
 CrystalBTS is a hard fork of [1xBTS](https://github.com/chrismoos/1xbts),
 originally created by Chris Moos. It preserves the upstream project's
@@ -25,7 +25,7 @@ This project is intended for research, interoperability testing, and lab use.
 Operate RF hardware only where you are authorized to transmit. You have been warned.
 
 <a href="docs/images/screenshot.png">
-  <img src="docs/images/screenshot.png" alt="CrystalBTS dashboard" width="720">
+  <img src="docs/images/screenshot.png" alt="CrystalBTS dashboard showing a live CDMA lab network" width="960">
 </a>
 
 ## Why CrystalBTS

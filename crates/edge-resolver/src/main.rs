@@ -125,8 +125,11 @@ async fn resolve_msisdn(state: &ResolverState, params: &ResolveParams) -> String
                 );
                 session.phone_number
             }
-            Some(_) => {
-                info!("edge-resolver: {} -> known session but no phone_number", ip);
+            Some(session) => {
+                info!(
+                    "edge-resolver: {} -> known session but no phone_number (session_id={} imsi={} mn_id={} esn={} meid={})",
+                    ip, session.session_id, session.imsi, session.mn_id, session.esn, session.meid,
+                );
                 String::new()
             }
             None => {

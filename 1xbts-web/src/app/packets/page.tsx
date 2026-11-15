@@ -177,7 +177,7 @@ export default function PacketsPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Subscriber</th>
+                  <th>Kitten</th>
                   <th>Bearer</th>
                   <th>Status</th>
                   <th>Mobile IP</th>

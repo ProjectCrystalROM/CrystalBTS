@@ -73,7 +73,7 @@ export function MobilesTable({
         <thead>
           <tr>
             <th>Address</th>
-            <th>Subscriber</th>
+            <th>Kitten</th>
             <th>State</th>
             {closed && <th>Access</th>}
             {!hideCell && <th>Cell</th>}
@@ -117,7 +117,7 @@ export function MobilesTable({
                         href={`/subscribers/${encodeURIComponent(ms.subscriberId)}`}
                         className="text-secondary hover:text-accent-green transition-colors"
                       >
-                        {ms.subscriberDisplayName || ms.phoneNumber || "Subscriber"}
+                        {ms.subscriberDisplayName || ms.phoneNumber || "Kitten"}
                       </Link>
                       {ms.subscriberDisplayName && ms.phoneNumber && (
                         <div className="text-muted font-mono text-[11px]">

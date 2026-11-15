@@ -85,7 +85,7 @@ export function StartOtasp({ subscriberId, imsi, compact = false }: { subscriber
         className="rounded border border-accent-green/20 bg-accent-green-bg px-3 py-1.5 text-xs text-accent-green transition-colors hover:bg-accent-green/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-green disabled:opacity-50">
         {pending ? "Starting provisioning…" : compact ? "Start OTASP" : "Start provisioning"}
       </button>
-      {!compact && <p className="text-xs text-muted">Pages the handset and applies the configured OTASP settings and subscriber overrides.</p>}
+      {!compact && <p className="text-xs text-muted">Pages the handset and applies the configured OTASP settings and kitten overrides.</p>}
       {message && <p role="status" className="text-xs text-secondary">{message}</p>}
       {sessionId && <Link href={`/otasp/${encodeURIComponent(sessionId)}`} className="text-xs text-accent-green underline underline-offset-2">View session progress</Link>}
       <ErrorNotice error={error} className="text-xs" />

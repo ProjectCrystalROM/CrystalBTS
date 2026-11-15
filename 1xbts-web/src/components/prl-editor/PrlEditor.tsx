@@ -223,11 +223,11 @@ export function PrlEditor({
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex min-w-0 items-center gap-2 text-xs">
           <Link href="/prls" className="text-muted hover:text-primary">
-            ← PRLs
+            ← Wander maps
           </Link>
           <span className="text-dimmed">/</span>
           <span className="max-w-48 truncate text-primary" title={metadata.name}>
-            {metadata.name || "Untitled PRL"}
+            {metadata.name || "Untitled wander map"}
           </span>
           {metadata.isDefault && (
             <span className="text-accent-green">✓ default</span>
@@ -276,7 +276,7 @@ export function PrlEditor({
             }
             className="bg-accent-blue/20 border border-accent-blue/40 text-accent-blue px-3 py-1 rounded disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {saving ? "Saving…" : "Save PRL"}
+            {saving ? "Saving…" : "Save wander map"}
           </button>
         </div>
       </div>

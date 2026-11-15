@@ -250,7 +250,7 @@ export function HealthKpis({
   const rx = metrics?.rx;
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <Kpi label="Mobiles" value={mobiles} detail={`${mobiles - rejected} registered · ${rejected} rejected`} />
+      <Kpi label="Pocket pals" value={mobiles} detail={`${mobiles - rejected} registered · ${rejected} rejected`} />
       <Kpi label="Calls" value={calls} detail={calls ? "on traffic channels" : "no traffic channels"} />
       <Kpi
         label="TX real time"

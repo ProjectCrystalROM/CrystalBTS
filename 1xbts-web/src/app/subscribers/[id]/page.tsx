@@ -410,9 +410,9 @@ export default function SubscriberDetailPage({
           href="/subscribers"
           className="text-sm text-muted hover:text-primary"
         >
-          &larr; Subscribers
+          &larr; Kittens
         </Link>
-        <ErrorNotice error={error ?? "This subscriber does not exist or was deleted."} boxed onRetry={fetchDetail} />
+        <ErrorNotice error={error ?? "This kitten does not exist or was deleted."} boxed onRetry={fetchDetail} />
       </div>
     );
   }
@@ -428,11 +428,11 @@ export default function SubscriberDetailPage({
             href="/subscribers"
             className="text-sm text-muted hover:text-primary"
           >
-            &larr; Subscribers
+            &larr; Kittens
           </Link>
           <h1 className="text-lg font-bold font-mono mt-2">{subscriber.phoneNumber}</h1>
           <div className="text-xs text-muted">
-            {subscriber.displayName || "Unnamed subscriber"}
+            {subscriber.displayName || "Unnamed kitten"}
           </div>
         </div>
         <button
@@ -443,7 +443,7 @@ export default function SubscriberDetailPage({
           disabled={deleting}
           className="text-xs px-3 py-1.5 rounded bg-accent-red-bg text-accent-red border border-accent-red/20 hover:bg-accent-red/15 disabled:opacity-50 transition-colors"
         >
-          {deleting ? "Deleting..." : "Delete Subscriber"}
+          {deleting ? "Deleting..." : "Delete kitten"}
         </button>
       </div>
 
@@ -456,12 +456,12 @@ export default function SubscriberDetailPage({
         }}
         className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-border bg-popover p-6 text-primary shadow-xl backdrop:bg-black/60"
       >
-        <h2 id="delete-subscriber-title" className="text-lg font-semibold">Delete subscriber?</h2>
+        <h2 id="delete-subscriber-title" className="text-lg font-semibold">Delete kitten?</h2>
         <p className="mt-3 text-sm text-secondary">
           {subscriber.displayName ? `${subscriber.displayName} (${subscriber.phoneNumber})` : subscriber.phoneNumber}
         </p>
         <p id="delete-subscriber-description" className="mt-2 text-sm text-muted">
-          The subscriber and its configured identities will be permanently deleted. This cannot be undone.
+          This kitten and its configured identities will be permanently deleted. This cannot be undone.
         </p>
         <ErrorNotice error={deleteError} className="mt-3" />
         <div className="mt-6 flex justify-end gap-3">
@@ -480,12 +480,12 @@ export default function SubscriberDetailPage({
             onClick={handleDelete}
             className="rounded border border-accent-red/20 bg-accent-red-bg px-3 py-1.5 text-sm text-accent-red hover:bg-accent-red/15 disabled:opacity-50"
           >
-            {deleting ? "Deleting..." : "Delete Subscriber"}
+            {deleting ? "Deleting..." : "Delete kitten"}
           </button>
         </div>
       </dialog>
 
-      <Card title="Edit Subscriber">
+      <Card title="Edit kitten">
         <form onSubmit={handleSave} className="space-y-4" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -696,11 +696,11 @@ export default function SubscriberDetailPage({
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card title="Subscriber">
+        <Card title="Kitten">
           <Stat label="Phone Number" value={subscriber.phoneNumber} mono />
           <Stat label="Display Name" value={subscriber.displayName || "-"} />
           <Stat label="Status" value={subscriber.status} />
-          <Stat label="Subscriber ID" value={subscriber.subscriberId} mono />
+          <Stat label="Kitten ID" value={subscriber.subscriberId} mono />
           <Stat label="Created" value={formatTimestamp(subscriber.createdAt)} mono />
           <Stat label="Updated" value={formatTimestamp(subscriber.updatedAt)} mono />
         </Card>

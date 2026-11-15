@@ -106,7 +106,7 @@ export function HeaderTab({
           )}
         </label>
         <NumericInput
-          label="PRL ID"
+          label="Map ID"
           hint="0–65535"
           value={hdr.prListId}
           onChange={setPrListId}
@@ -124,7 +124,7 @@ export function HeaderTab({
           />
         </label>
         <div className="text-dimmed">
-          <span className="text-muted text-[11px]">PRL format</span>
+          <span className="text-muted text-[11px]">Wander map format</span>
           <div className="mt-1">
             {mode === "extended" ? "Extended (revision 3)" : "Classic (revision 1)"}
           </div>
@@ -137,7 +137,7 @@ export function HeaderTab({
           <span className="text-muted text-[11px]">Deployment</span>
           <div className="mt-1">
             {metadata.isDefault ? (
-              <span className="text-accent-green">✓ Default PRL</span>
+              <span className="text-accent-green">✓ Default wander map</span>
             ) : (
               <button
                 type="button"
@@ -145,7 +145,7 @@ export function HeaderTab({
                 disabled={metadata.busy}
                 className="text-accent-blue hover:underline disabled:opacity-50"
               >
-                Make this the default PRL
+                Make this the default wander map
               </button>
             )}
           </div>
@@ -160,7 +160,7 @@ export function HeaderTab({
                 onChange={(e) => setPrefOnly(!e.target.checked)}
                 className="rounded"
               />
-              <span>Allow systems not listed in this PRL</span>
+              <span>Allow systems not listed in this wander map</span>
             </label>
           </div>
         </label>
@@ -178,7 +178,7 @@ export function HeaderTab({
             disabled={metadata.busy}
             className="text-accent-red hover:underline disabled:opacity-50"
           >
-            Delete PRL
+            Delete wander map
           </button>
         </div>
       </div>

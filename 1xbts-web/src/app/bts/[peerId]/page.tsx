@@ -370,11 +370,11 @@ export default function BtsDetailPage({
       )}
 
       <Card
-        title={`Mobiles on this cell (${servedMobiles.length})`}
+        title={`Pocket pals on this cell (${servedMobiles.length})`}
         action={<span className="text-[11px] text-muted">by last heard</span>}
       >
         {servedMobiles.length === 0 ? (
-          <p className="text-dimmed text-sm">No mobiles on this cell.</p>
+          <p className="text-dimmed text-sm">No pocket pals on this cell.</p>
         ) : (
           <MobilesTable
             mobiles={[...servedMobiles]
@@ -387,7 +387,7 @@ export default function BtsDetailPage({
         )}
         <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
           <Link href="/mobiles" className="text-xs text-accent-green hover:text-accent-green">
-            All mobiles &rarr;
+            All pocket pals &rarr;
           </Link>
           {servedMobiles.length > CELL_MOBILE_ROWS && (
             <span className="text-[11px] text-dimmed">
@@ -405,7 +405,7 @@ export default function BtsDetailPage({
               <thead>
                 <tr>
                   <th>Walsh</th>
-                  <th>Mobile</th>
+                  <th>Pocket pal</th>
                   <th>Target</th>
                   <th>Override</th>
                   <th className="text-right">FER</th>

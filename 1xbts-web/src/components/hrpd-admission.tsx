@@ -83,7 +83,7 @@ export function HrpdAdmissionCard({ admission }: { admission?: SessionAdmission 
         <Stat label="Reason" value={reasonLabel(admission.reason)} />
       )}
       <div className="flex justify-between py-0.5">
-        <span className="text-muted text-sm">Subscriber</span>
+        <span className="text-muted text-sm">Kitten</span>
         {admission.subscriberId ? (
           <Link
             href={`/subscribers/${encodeURIComponent(admission.subscriberId)}`}

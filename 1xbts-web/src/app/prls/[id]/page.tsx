@@ -112,9 +112,9 @@ export default function PrlDetailPage() {
   const s = prl.summary;
   if (!prl.decoded || !s) {
     return (
-      <Card title="PRL unavailable" className="border-accent-red/40">
+      <Card title="Wander map unavailable" className="border-accent-red/40">
         <p className="text-accent-red text-sm">
-          This PRL does not have an editable decoded body.
+          This wander map does not have an editable decoded body.
         </p>
       </Card>
     );

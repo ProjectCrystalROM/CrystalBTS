@@ -124,7 +124,7 @@ export function AccessDeniedCard() {
                 <th>Network</th>
                 <th>Access</th>
                 <th>Reason</th>
-                <th>Matched subscriber</th>
+                <th>Matched kitten</th>
                 <th>Last base station</th>
                 <th>Last attempt</th>
                 <th className="text-right">Denials</th>

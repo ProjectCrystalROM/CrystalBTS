@@ -255,7 +255,7 @@ export function TrafficChannelsCard({
                 <tr>
                   <th>Walsh</th>
                   {showCell && <th>Cell</th>}
-                  <th>Mobile</th>
+                  <th>Pocket pal</th>
                   <th>Call</th>
                   <th>Reverse quality</th>
                   <th className="text-right">Rev FER</th>

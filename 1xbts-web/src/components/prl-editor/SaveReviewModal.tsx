@@ -43,10 +43,10 @@ export function SaveReviewModal({
         <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
           <div>
             <h2 id="save-review-title" className="text-sm font-semibold text-primary">
-              Review PRL changes
+              Review wander map changes
             </h2>
             <p className="mt-0.5 text-[11px] text-muted">
-              Verify these changes before updating the stored PRL.
+              Verify these changes before updating the stored wander map.
             </p>
           </div>
           <div className="flex flex-wrap justify-end gap-1.5">
@@ -100,7 +100,7 @@ export function SaveReviewModal({
             disabled={saving}
             className="rounded border border-accent-blue/40 bg-accent-blue/20 px-3 py-1.5 text-xs text-accent-blue hover:bg-accent-blue/30 disabled:opacity-50"
           >
-            {saving ? "Saving…" : "Save PRL"}
+            {saving ? "Saving…" : "Save wander map"}
           </button>
         </div>
       </div>

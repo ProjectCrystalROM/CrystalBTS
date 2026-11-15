@@ -13,12 +13,12 @@ function linksFor(body: ApiErrorBody): ErrorLink[] {
   const metadata = body.metadata ?? {};
   const links: ErrorLink[] = [];
   if (body.reason === "IDENTITY_IN_USE" && metadata.subscriber_id) {
-    links.push({ href: `/subscribers/${encodeURIComponent(metadata.subscriber_id)}`, label: "Open the subscriber that has it" });
+    links.push({ href: `/subscribers/${encodeURIComponent(metadata.subscriber_id)}`, label: "Open the kitten that has it" });
   }
   if (body.reason === "PRL_IN_USE" && metadata.sample_subscriber_id) {
     links.push({
       href: `/subscribers/${encodeURIComponent(metadata.sample_subscriber_id)}`,
-      label: "Open a subscriber that uses it",
+      label: "Open a kitten that uses it",
     });
   }
   if (

@@ -149,20 +149,20 @@ export default function NewPrlPage() {
 
   return (
     <div className="page-container space-y-4">
-      <h1 className="text-primary text-lg font-medium">New PRL</h1>
+      <h1 className="text-primary text-lg font-medium">New wander map</h1>
 
       <div className="flex gap-1 border border-border rounded text-xs w-fit">
         <ModeTab id="running" current={mode} onClick={setMode}>
-          Running system
+          From running system
         </ModeTab>
         <ModeTab id="upload" current={mode} onClick={setMode}>
           Upload .prl
         </ModeTab>
         <ModeTab id="classic" current={mode} onClick={setMode}>
-          Build classic
+          Classic map
         </ModeTab>
         <ModeTab id="extended" current={mode} onClick={setMode}>
-          Build extended
+          Extended map
         </ModeTab>
       </div>
 
@@ -174,7 +174,7 @@ export default function NewPrlPage() {
               className="block w-full mt-1 bg-bg border border-border rounded px-2 py-1"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="My PRL"
+              placeholder="My wander map"
               maxLength={120}
             />
           </label>
@@ -190,7 +190,7 @@ export default function NewPrlPage() {
 
           {mode === "upload" && (
             <label className="block">
-              <span className="text-muted">PRL file</span>
+              <span className="text-muted">Wander map file (.prl)</span>
               <input
                 type="file"
                 accept=".prl,application/octet-stream"
@@ -216,7 +216,7 @@ export default function NewPrlPage() {
 
           {mode !== "upload" && (
             <label className="block">
-              <span className="text-muted">Initial PRL ID (0–65535)</span>
+              <span className="text-muted">Initial map ID (0–65535)</span>
               <input
                 type="number"
                 className="block w-full mt-1 bg-bg border border-border rounded px-2 py-1 font-mono"
@@ -242,8 +242,8 @@ export default function NewPrlPage() {
                 : mode === "upload"
                   ? "Upload"
                   : mode === "running"
-                    ? "Generate PRL"
-                    : "Create empty PRL"}
+                    ? "Generate wander map"
+                    : "Create empty wander map"}
             </button>
             <button
               type="button"
@@ -287,9 +287,9 @@ function ModeTab({
 function modeLabel(m: Mode): string {
   switch (m) {
     case "running": return "Generate for the running system";
-    case "upload": return "Upload an existing PRL";
-    case "classic": return "Build a new classic PRL (SSPR_P_REV = 1)";
-    case "extended": return "Build a new extended PRL (SSPR_P_REV = 3)";
+    case "upload": return "Upload an existing wander map";
+    case "classic": return "Build a new classic wander map (SSPR_P_REV = 1)";
+    case "extended": return "Build a new extended wander map (SSPR_P_REV = 3)";
   }
 }
 

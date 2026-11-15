@@ -485,8 +485,8 @@ export default function SubscribersPage() {
                   <th>Phone Number</th>
                   <th>Display Name</th>
                   <th>Status</th>
-                  <th>Active Mobile</th>
-                  <th>Subscriber ID</th>
+                  <th>Active pocket pal</th>
+                  <th>Kitten ID</th>
                   <th></th>
                 </tr>
               </thead>

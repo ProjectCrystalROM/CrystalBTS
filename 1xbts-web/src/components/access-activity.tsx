@@ -357,7 +357,7 @@ export function AccessStatus({
           href={createSubscriberHref({ imsi, esn, meid })}
           className="inline-block mt-2 text-xs px-3 py-1 rounded bg-accent-green-bg text-accent-green border border-accent-green/20 hover:bg-accent-green/15"
         >
-          Create subscriber from this mobile
+          Create kitten from this pocket pal
         </a>
       )}
     </div>

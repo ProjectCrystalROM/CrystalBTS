@@ -46,7 +46,7 @@ export default function BtsPage() {
                   <th className="text-right">SID</th>
                   <th className="text-right">NID</th>
                   <th>EV-DO</th>
-                  <th className="text-right">Mobiles</th>
+                  <th className="text-right">Pocket pals</th>
                   <th></th>
                 </tr>
               </thead>

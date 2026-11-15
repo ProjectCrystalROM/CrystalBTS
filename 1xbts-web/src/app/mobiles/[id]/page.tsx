@@ -252,14 +252,14 @@ function formatMobileTitle(mobile: MobileInfo): string {
 }
 
 function defaultSubscriberName(mobile: MobileInfo): string {
-  if (mobile.esn != null) return `Mobile ${formatEsn(mobile.esn)}`;
-  if (mobile.meid) return `Mobile MEID ${formatMeid(mobile.meid)}`;
-  if (mobile.imsi) return `Mobile IMSI ${mobile.imsi}`;
-  return "Mobile Station";
+  if (mobile.esn != null) return `Pocket pal ${formatEsn(mobile.esn)}`;
+  if (mobile.meid) return `Pocket pal MEID ${formatMeid(mobile.meid)}`;
+  if (mobile.imsi) return `Pocket pal IMSI ${mobile.imsi}`;
+  return "Pocket pal";
 }
 
 function subscriberTitle(subscriberId: string, displayName: string): string {
-  return displayName || `Subscriber ${subscriberId.slice(-4)}`;
+  return displayName || `Kitten ${subscriberId.slice(-4)}`;
 }
 
 function firstVisibleRow(container: HTMLElement | null): { id: string; top: number } | null {
@@ -736,7 +736,7 @@ export default function MobileDetailPage({
       return;
     }
     if (!mobile.imsi || (mobile.esn == null && !mobile.meid)) {
-      setCreateError("Mobile needs IMSI plus ESN or MEID");
+      setCreateError("Pocket pal needs IMSI plus ESN or MEID");
       return;
     }
 
@@ -757,7 +757,7 @@ export default function MobileDetailPage({
             meid: mobile.meid,
           }),
         },
-        "create the subscriber",
+        "create the kitten",
       );
       if (data.subscriber?.subscriberId) {
         router.push(`/subscribers/${encodeURIComponent(data.subscriber.subscriberId)}`);
@@ -911,10 +911,10 @@ export default function MobileDetailPage({
           href="/mobiles"
           className="text-sm text-muted hover:text-secondary"
         >
-          &larr; Back to Mobiles
+          &larr; Back to pocket pals
         </Link>
         <div className="rounded-lg border border-accent-amber/20 bg-accent-amber-bg p-4 text-accent-amber text-sm">
-          Mobile station &quot;{address}&quot; not found.
+          Pocket pal &quot;{address}&quot; not found.
         </div>
       </div>
     );
@@ -1110,7 +1110,7 @@ export default function MobileDetailPage({
   return (
     <div className="page-container">
       <Link href="/mobiles" className="text-sm text-muted hover:text-secondary">
-        &larr; Mobiles
+        &larr; Pocket pals
       </Link>
       <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="min-w-0 flex-1">
@@ -1413,7 +1413,7 @@ export default function MobileDetailPage({
               subscriberId={mobile.subscriberId}
             />
             <div className="flex justify-between py-0.5">
-              <span className="text-muted text-sm">Subscriber</span>
+              <span className="text-muted text-sm">Kitten</span>
               {mobile.subscriberId ? (
                 <Link
                   href={`/subscribers/${encodeURIComponent(mobile.subscriberId)}`}
@@ -1458,7 +1458,7 @@ export default function MobileDetailPage({
                     disabled={!canCreateSubscriber}
                     className="text-xs px-3 py-1.5 rounded bg-accent-green-bg text-accent-green border border-accent-green/20 hover:bg-accent-green/15 disabled:opacity-50 disabled:hover:bg-accent-green-bg transition-colors"
                   >
-                    Create Subscriber
+                    Create kitten
                   </button>
                 ) : (
                   <form onSubmit={createSubscriberFromMobile} className="space-y-3">

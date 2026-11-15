@@ -359,13 +359,13 @@ export default function DashboardPage() {
         action={<span className="text-[11px] text-muted">by last heard</span>}
       >
         {mobiles.length === 0 ? (
-          <p className="text-dimmed text-sm">No mobile stations registered.</p>
+          <p className="text-dimmed text-sm">No pocket pals registered.</p>
         ) : (
           <MobilesTable mobiles={recentMobiles.slice(0, MOBILE_ROWS)} cells={networkCells} closed={closed} />
         )}
         <div className="mt-2 pt-2 border-t border-border flex items-center justify-between">
           <Link href="/mobiles" className="text-xs text-accent-green hover:text-accent-green">
-            All mobiles &rarr;
+            All pocket pals &rarr;
           </Link>
           {mobiles.length > MOBILE_ROWS && (
             <span className="text-[11px] text-dimmed">
@@ -618,7 +618,7 @@ function NetworkCellRow({ cell, mobiles }: { cell: NetworkCell; mobiles: MobileI
       </div>
       <div className="text-right text-[11px] text-muted shrink-0">
         <div>
-          {cell.servedMobiles ?? 0} {cell.servedMobiles === 1 ? "mobile" : "mobiles"}
+          {cell.servedMobiles ?? 0} {cell.servedMobiles === 1 ? "pocket pal" : "pocket pals"}
         </div>
         {probe && (
           <div className="font-mono" title={probe.noiseFloorStale ? "No quiet period to update from recently" : "Reverse noise floor"}>

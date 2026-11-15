@@ -7,16 +7,16 @@ import { useConnectionState } from "@/lib/use-event-stream";
 import { useBaseStations } from "@/lib/use-base-stations";
 
 const links = [
-  { href: "/", label: "Dashboard", icon: "✦" },
-  { href: "/bts", label: "Cells", icon: "◌" },
-  { href: "/base-stations", label: "Base stations", icon: "⌁" },
-  { href: "/messages", label: "Radio chatter", icon: "〰" },
-  { href: "/mobiles", label: "Pocket pals", icon: "♡" },
-  { href: "/subscribers", label: "Kittens", icon: "⊹" },
-  { href: "/prls", label: "Wander maps", icon: "◆" },
-  { href: "/smsc", label: "Texts & MMS", icon: "✉" },
-  { href: "/packets", label: "Packet data", icon: "↓" },
-  { href: "/evdo", label: "EV-DO", icon: "⚡" },
+  { href: "/", label: "Dashboard", icon: "✦", tilt: "-rotate-[0.45deg]" },
+  { href: "/bts", label: "Cells", icon: "◌", tilt: "rotate-[0.2deg]" },
+  { href: "/base-stations", label: "Base stations", icon: "⌁", tilt: "-rotate-[0.15deg]" },
+  { href: "/messages", label: "Radio chatter", icon: "〰", tilt: "rotate-[0.4deg]" },
+  { href: "/mobiles", label: "Pocket pals", icon: "♡", tilt: "-rotate-[0.25deg]" },
+  { href: "/subscribers", label: "Kittens", icon: "⊹", tilt: "rotate-[0.15deg]" },
+  { href: "/prls", label: "Wander maps", icon: "◆", tilt: "-rotate-[0.35deg]" },
+  { href: "/smsc", label: "Texts & MMS", icon: "✉", tilt: "rotate-[0.3deg]" },
+  { href: "/packets", label: "Packet data", icon: "↓", tilt: "-rotate-[0.1deg]" },
+  { href: "/evdo", label: "EV-DO", icon: "⚡", tilt: "rotate-[0.5deg]" },
 ];
 
 type Theme = "dark" | "light";
@@ -116,9 +116,9 @@ export function Sidebar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-2.5 text-[13px] font-medium px-3 py-2 rounded-[14px_10px_15px_11px] transition-colors ${
+              className={`flex items-center gap-2.5 text-[13px] font-medium px-3 py-2 rounded-[14px_10px_15px_11px] transition-colors ${link.tilt} ${
                 active
-                  ? "bg-active text-primary font-semibold shadow-[2px_3px_0_var(--border-primary)] -rotate-[0.3deg]"
+                  ? "bg-active text-primary font-semibold shadow-[2px_3px_0_var(--border-primary)]"
                   : "text-muted hover:text-primary hover:bg-hover"
               }`}
             >

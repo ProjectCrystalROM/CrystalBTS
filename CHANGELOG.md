@@ -11,6 +11,7 @@
 - Add an opt-in carrier portal with ZIP-code weather and persistent cookie-based settings for legacy browsers.
 
 - Ignore inactive call identities when correlating femtocell OTASP replies.
+- Fix an HLR race when a new mobile registers with MEID.
 - Fix issue with cdma-ms softphone Status Response handling.
 - BTS now syncs hardware time on its own thread, reducing hardware time fetch jitter.
 - Airave 2.5 (5.x firmware) femtocells now receive a changed `term_auth_psk` on the next sync (EV-DO terminal authentication failed after the secret was regenerated).

@@ -11,6 +11,10 @@
 - Add an opt-in carrier portal with ZIP-code weather and persistent cookie-based settings for legacy browsers.
 
 - Ignore inactive call identities when correlating femtocell OTASP replies.
+- Increased bladeRF micro stream buffering to reduce RX overflows.
+- Improved EV-DO Rev A downlink stability.
+- Reduced transmit and receive CPU load in composite 1x and EV-DO mode.
+- Reduce intermittent radio startup failures when the first timed transmission misses its deadline.
 - Fix an HLR race when a new mobile registers with MEID.
 - Fix issue with cdma-ms softphone Status Response handling.
 - BTS now syncs hardware time on its own thread, reducing hardware time fetch jitter.

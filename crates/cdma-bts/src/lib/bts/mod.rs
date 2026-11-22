@@ -426,6 +426,7 @@ impl Bts {
 
     fn flush_tx_samples_batch(
         radio_tx: &mut dyn RadioTx,
+        clock: &timing::HardwareClockEstimate,
         state: &mut TxLoopState,
         tx_samples: &[Complex32],
         batch_tx_tick: u64,
@@ -435,12 +436,7 @@ impl Bts {
             return Ok(());
         }
 
-        const MARGIN_SAMPLE_INTERVAL: usize = 16;
-        let hw_before = if state.tx_batches % MARGIN_SAMPLE_INTERVAL == 0 {
-            radio_tx.get_hardware_time().ok()
-        } else {
-            None
-        };
+        let hw_before = clock.now_ticks();
 
         let tx_start = Instant::now();
         radio_tx.transmit_at(tx_samples, Some(batch_tx_tick))?;
@@ -449,7 +445,8 @@ impl Bts {
         state.tx_time_max_us = state.tx_time_max_us.max(tx_us);
         state.tx_batches += 1;
 
-        if let Some(hw) = hw_before {
+        {
+            let hw = hw_before;
             let tick_rate = radio_tx.tick_rate().max(1);
             let margin_ticks = i128::from(batch_tx_tick) - i128::from(hw);
             let margin_us = (margin_ticks * 1_000_000 / i128::from(tick_rate)) as i64;
@@ -895,9 +892,19 @@ impl Bts {
         let heartbeat_interval = (state.chip_rate / state.block_size) as usize;
         let mut sent_blocks = 0usize;
 
-        let mut wall_anchor_instant = Instant::now();
-        let mut wall_anchor_tick = radio_tx.get_hardware_time()?;
+        let tx_clock = Arc::new(timing::HardwareClockEstimate::new(tick_rate, || {
+            Ok(radio_tx.get_hardware_time()?)
+        })?);
+        let tx_clock_poller = radio_tx
+            .clock_reader()
+            .map(|reader| timing::HardwareClockPoller::spawn(Arc::clone(&tx_clock), reader));
         let mut pacer = timing::LookaheadPacer::new();
+        let tx_lookahead_ms = self.runtime.max_tx_lookahead_ms;
+        let startup_lookahead_ms = tx_lookahead_ms.saturating_add(
+            (state.tx_batch_chips * 1_000)
+                .div_ceil(state.chip_rate)
+                .min(u64::from(u32::MAX)) as u32,
+        );
 
         loop {
             if shutdown.load(std::sync::atomic::Ordering::Relaxed) {
@@ -911,13 +918,19 @@ impl Bts {
             }
 
             let batch_playout_tick = timing::batch_playout_tick(&state, chip_cursor, tick_rate);
-            if pace_to_hardware_time && self.runtime.max_tx_lookahead_ms > 0 {
+            if pace_to_hardware_time && tx_lookahead_ms > 0 {
+                // The initial timed send has no queued samples to absorb driver latency.
+                let lookahead_ms = if sent_blocks == 0 {
+                    startup_lookahead_ms
+                } else {
+                    tx_lookahead_ms
+                };
                 pacer.wait_until_within_tx_lookahead(
                     batch_playout_tick,
-                    wall_anchor_tick,
-                    wall_anchor_instant,
+                    tx_clock.tick_at_epoch(),
+                    tx_clock.epoch(),
                     tick_rate,
-                    self.runtime.max_tx_lookahead_ms,
+                    lookahead_ms,
                     &shutdown,
                 );
             }
@@ -1116,9 +1129,8 @@ impl Bts {
                 state.tx_batches = 0;
                 state.interval_start = Instant::now();
 
-                if let Ok(hw) = radio_tx.get_hardware_time() {
-                    wall_anchor_tick = hw;
-                    wall_anchor_instant = Instant::now();
+                if tx_clock_poller.is_none() {
+                    tx_clock.refresh(|| Ok(radio_tx.get_hardware_time()?), true);
                 }
             }
 
@@ -1387,6 +1399,7 @@ impl Bts {
                 batch_shape_us = shape_start.elapsed().as_micros() as u64;
                 Self::flush_tx_samples_batch(
                     &mut *radio_tx,
+                    &tx_clock,
                     &mut state,
                     &tx_shape_buf,
                     batch_playout_tick,
@@ -1400,6 +1413,7 @@ impl Bts {
                 batch_shape_us = shape_start.elapsed().as_micros() as u64;
                 Self::flush_tx_samples_batch(
                     &mut *radio_tx,
+                    &tx_clock,
                     &mut state,
                     &tx_shape_buf,
                     batch_playout_tick,
@@ -1411,6 +1425,7 @@ impl Bts {
                 batch_shape_us = shape_start.elapsed().as_micros() as u64;
                 Self::flush_tx_samples_batch(
                     &mut *radio_tx,
+                    &tx_clock,
                     &mut state,
                     &tx_shape_buf,
                     batch_playout_tick,

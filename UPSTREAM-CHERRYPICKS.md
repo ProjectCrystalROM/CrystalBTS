@@ -29,11 +29,52 @@ Conflicts encountered: **only `CHANGELOG.md`** (both repos keep an unreleased
 `# HEAD` list). Resolved by keeping CrystalBTS's entries and appending the
 upstream lines. No Rust source conflict in any of the ten.
 
-## Deliberately NOT cherry-picked
+## Dependency audit — nothing unrelated was left behind
 
-* Nothing else exists: `9897714..48155e6` is exactly the ten commits above, and
-  all ten are applied. Upstream has no femtocell/Airave work newer than the
-  shared base.
+The ten commits were re-checked for hidden dependencies on each other and on
+commits that look unrelated. Method: hash the working tree of every file the
+series touches against upstream `48155e6`, and list upstream commits that are
+prerequisites of each pick.
+
+**Result: all 30 touched files are byte-identical to upstream `48155e6`.**
+The only file that differs from upstream is `Cargo.lock`, and only in the
+`wap-gw` package entry (CrystalBTS's carrier portal), which is expected.
+
+Dependency chains, all satisfied in the applied order:
+
+* **#2 `5c984fe` → #8 `83766af` (sdr-hal 0.1.4).** The pick calls
+  `radio_tx.clock_reader()` and `HardwareClockPoller::spawn(..)`, and
+  `crates/cdma-bts/src/lib/bts/timing.rs` adds `use sdr_hal::RadioClock`.
+  Upstream only bumped sdr-hal to 0.1.4 *after* this commit, in `83766af`.
+  Cross-checked against the published crates: sdr-hal **0.1.0 already exports**
+  `RadioClock`, `clock_reader()` and the identical `radio.rs` / `lib.rs` public
+  API, so the pair compiles in either order — but the lock bump is applied
+  anyway, and the 0.1.4 DSP/daemon improvements are real gains.
+* **#7 `16ff4ff` → #2 `5c984fe`.** The TX-loop changes build on the clock
+  estimate (`tx_clock.tick_at_epoch()`, `HardwareClockPoller`). Applied after it.
+* **#7 → #8.** Uses `sdr-hal` dsp/mixing paths improved in 0.1.4.
+* **#9 `5c45e39` → #8.** It exists *only* because sdr-hal 0.1.4 changed the
+  `serve()` signature (it adds the `open_radio` factory argument). Applied
+  after #8, and its test file matches upstream exactly.
+* **#6 `05de79a` (HLR MEID race)** has no dependencies and nothing depends on
+  it. It matters for Airave because Airvana handsets commonly register by MEID.
+* **#4 `1b603ef`** is the only commit that adds `RadioPipeHandle::try_inject_rx`
+  (`crates/cdma-bts/src/lib/sdr/pipe.rs`), consumed by the cdma-ms engine; both
+  halves are in the same commit.
+* **#3 `4905eaf`, #5 `0ea3ca0`, #10 `48155e6`** are self-contained (a new JSON
+  radio config, a test serialization fix, a CI env pin).
+
+Nothing else exists upstream: `9897714..48155e6` is exactly these ten commits.
+Upstream has no femtocell/Airave work newer than the shared base, so no
+"unrelated-looking" commit carries an Airave fix.
+
+## Where this lives
+
+Branch `airave-2.5-upstream-fixes` is pushed to
+`origin` (`ProjectCrystalROM/CrystalBTS`) at `d20f062`, separate from `main`
+(`a3f89e1`), so you can test it and `git reset`/`git revert` or just delete the
+branch without touching `main`. Each pick is its own commit with an upstream
+`cherry picked from` trailer, so individual reverts are clean.
 
 ## Caveats for an Airave 2.5 box
 
@@ -46,11 +87,11 @@ upstream lines. No Rust source conflict in any of the ten.
   and deploy to another do you need to drop the flag, or the target gets
   `SIGILL` on an instruction the build host had and it doesn't. CI overrides it
   already (`48155e6`).
-* **sdr-hal version.** `5c984fe` and `16ff4ff` need `RadioClock` /
-  `clock_reader()` from sdr-hal **0.1.4**; the `Cargo.lock` bump (`83766af`)
-  covers the normal case. If the build box has its own `[patch]` table or a
-  vendored older sdr-hal, those two commits fail with "no method named
-  `clock_reader`" — check `cargo check -p cdma-bts` first.
+* **sdr-hal version.** `5c984fe` and `16ff4ff` use `RadioClock` /
+  `clock_reader()`, which sdr-hal 0.1.0 already exports — so they compile even
+  against an older sdr-hal. The lock is on **0.1.4** (`83766af`) for its DSP
+  and daemon fixes. If the build box pins sdr-hal with its own `[patch]` table,
+  `cargo check -p cdma-bts` is still the fastest way to catch a mismatch.
 * **`config/radio_bladerf_micro2.json`** `num_buffers: 32` only affects bladeRF;
   it is harmless if you are femtocell-only.
 * None of these commits touch `config/femto.json`, `crates/cdma-femto`, or the
